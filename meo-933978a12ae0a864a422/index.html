@@ -322,7 +322,7 @@ tbody tr:hover td { background: #f8fafc; }
   <button class="tab-btn" id="review-tab-btn" onclick="switchTab('reviews',this)">
     口コミ管理<span class="tab-badge" id="unreplied-badge">0</span>
   </button>
-  <!-- 最新情報投稿タブはモックのため非表示（フェーズ4で実装するときに復活させる） -->
+  <button class="tab-btn" id="posts-tab-btn" onclick="switchTab('posts',this)">最新情報投稿</button>
 </nav>
 
 <main class="main">
@@ -449,9 +449,10 @@ tbody tr:hover td { background: #f8fafc; }
           placeholder="最新情報（キャンペーン・メニュー変更・イベントなど）を入力してください..."
           maxlength="1500" oninput="updateCharCount()"></textarea>
         <div class="post-footer">
-          <button class="btn btn-primary" onclick="handlePost()">投稿する（モック）</button>
+          <button class="btn btn-primary" id="postBtn" onclick="handlePost()">投稿する</button>
           <span class="char-count" id="charCount">0 / 1500文字</span>
         </div>
+        <div id="post-note" style="margin-top:10px;font-size:12px;color:#6b7280"></div>
       </div>
     </div>
   </div>
@@ -8700,6 +8701,10 @@ function init() {
     postGrid.appendChild(label);
   });
 
+  document.getElementById('post-note').textContent = isLocalDashboard()
+    ? '「投稿する」を押すと確認のうえ、選択した店舗のGoogleビジネスプロフィールに即時投稿されます。'
+    : 'このページは閲覧専用です。投稿はMac miniのダッシュボード（http://localhost:8825/）から行えます。';
+
   updateUnrepliedBadge();
   updateDashboard();
   renderReviews();
@@ -9083,13 +9088,51 @@ function updateCharCount() {
   const n = document.getElementById('postText').value.length;
   document.getElementById('charCount').textContent = n + ' / 1500文字';
 }
-function handlePost() {
+// 投稿はMac miniのローカル投稿サーバー経由でのみ可能（公開ページは閲覧専用）
+function isLocalDashboard() {
+  return ['localhost', '127.0.0.1'].includes(location.hostname);
+}
+async function handlePost() {
   const checked = [...document.querySelectorAll('#post-store-grid input:checked')];
   if (!checked.length) { alert('投稿先店舗を1つ以上選択してください'); return; }
   const text = document.getElementById('postText').value.trim();
   if (!text) { alert('投稿内容を入力してください'); return; }
+
+  if (!isLocalDashboard()) {
+    alert('このページは閲覧専用です。\n投稿はMac miniのダッシュボード（http://localhost:8825/）から行ってください。');
+    return;
+  }
+
   const names = checked.map(cb => cb.closest('label').querySelector('span').textContent);
-  alert('【フェーズ2実装予定】GBP APIと連携します\n\n投稿先（' + checked.length + '店舗）:\n' + names.join('\n') + '\n\n内容:\n' + text);
+  if (!confirm('以下の内容でGoogleビジネスプロフィールに投稿します。よろしいですか？\n\n投稿先（' + checked.length + '店舗）:\n' + names.join('\n') + '\n\n内容:\n' + text)) return;
+
+  const btn = document.getElementById('postBtn');
+  btn.disabled = true;
+  btn.textContent = '投稿中...';
+  try {
+    const res = await fetch('/api/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeIds: checked.map(cb => parseInt(cb.value)), text })
+    });
+    const j = await res.json();
+    if (j.ok) {
+      alert('✅ ' + j.posted + '店舗すべてに投稿しました。Googleでの反映まで数分かかることがあります。');
+      document.getElementById('postText').value = '';
+      updateCharCount();
+    } else if (j.results) {
+      const ng = Object.values(j.results).filter(r => !r.ok)
+        .map(r => '・' + (r.store || '') + ': ' + (r.error || r.status || '失敗'));
+      alert('⚠️ ' + j.posted + '/' + j.total + '店舗に投稿。失敗:\n' + ng.join('\n'));
+    } else {
+      alert('⚠️ 投稿に失敗しました: ' + (j.error || res.status));
+    }
+  } catch (e) {
+    alert('⚠️ 投稿サーバーに接続できません。Mac miniで投稿サーバー（port 8825）が起動しているか確認してください。\n' + e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '投稿する';
+  }
 }
 
 /* ============================================================
