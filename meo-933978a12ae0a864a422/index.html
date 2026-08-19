@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEO Manager — Googleビジネスプロフィール統合管理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ─── Design Tokens ─── */
+:root {
+  --navy:       #0b1929;
+  --navy-2:     #132338;
+  --blue:       #2563eb;
+  --blue-2:     #3b82f6;
+  --blue-pale:  #eff6ff;
+  --cyan:       #06b6d4;
+  --green:      #10b981;
+  --amber:      #f59e0b;
+  --red:        #ef4444;
+  --purple:     #8b5cf6;
+  --text:       #0f172a;
+  --text-2:     #475569;
+  --text-3:     #94a3b8;
+  --border:     #e2e8f0;
+  --border-2:   #f1f5f9;
+  --bg:         #f0f4f8;
+  --surface:    #ffffff;
+  --sh-sm:      0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --radius:     12px;
+  --radius-sm:  8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ─── Header ─── */
+.header {
+  background: var(--navy);
+  position: sticky; top: 0; z-index: 200;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 60px;
+}
+.header-accent {
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--cyan) 50%, var(--blue-2) 100%);
+}
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-badge {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--cyan) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 15px; color: #fff;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset;
+}
+.logo-name { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+.logo-sub  {
+  font-size: 10px; color: rgba(255,255,255,.38);
+  text-transform: uppercase; letter-spacing: .08em; font-weight: 500; margin-top: 1px;
+}
+.header-controls { display: flex; align-items: center; gap: 10px; }
+.hdr-select {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #fff; border-radius: 7px;
+  padding: 6px 30px 6px 11px; font-size: 13px; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='rgba(255,255,255,.45)' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  transition: border-color .15s, background-color .15s;
+}
+.hdr-select:hover { border-color: rgba(255,255,255,.25); background-color: rgba(255,255,255,.11); }
+.hdr-select option { background: var(--navy-2); color: #fff; }
+
+/* ─── Tab Nav ─── */
+.tab-nav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; padding: 0 28px; gap: 2px;
+}
+.tab-btn {
+  padding: 14px 18px; background: none; border: none;
+  color: var(--text-2); font-size: 14px; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+.tab-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--red); color: #fff; border-radius: 10px;
+  font-size: 10px; font-weight: 700; padding: 1px 6px; margin-left: 6px; line-height: 1.4;
+}
+
+/* ─── Main ─── */
+.main { padding: 28px; max-width: 1480px; margin: 0 auto; }
+.section-label {
+  font-size: 11px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px;
+}
+
+/* ─── KPI Cards ─── */
+.cards-row {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 14px; margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--sh-sm); border-top: 3px solid transparent;
+  animation: fadeUp .4s ease both;
+}
+.kpi-card:nth-child(1) { border-top-color: var(--blue);   animation-delay: .05s; }
+.kpi-card:nth-child(2) { border-top-color: var(--cyan);   animation-delay: .10s; }
+.kpi-card:nth-child(3) { border-top-color: var(--green);  animation-delay: .15s; }
+.kpi-card:nth-child(4) { border-top-color: var(--amber);  animation-delay: .20s; }
+.kpi-card:nth-child(5) { border-top-color: var(--purple); animation-delay: .25s; }
+.kpi-card:nth-child(6) { border-top-color: var(--red);    animation-delay: .30s; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.kpi-label {
+  font-size: 11px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
+}
+.kpi-value {
+  font-size: 30px; font-weight: 800; color: var(--text);
+  letter-spacing: -.03em; line-height: 1;
+  font-variant-numeric: tabular-nums; margin-bottom: 10px;
+}
+.kpi-trend { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 3px; }
+.trend-up   { color: var(--green); }
+.trend-down { color: var(--red); }
+.trend-flat { color: var(--text-3); }
+
+/* ─── Charts ─── */
+.charts-row {
+  display: grid; grid-template-columns: 2fr 2fr 3fr;
+  gap: 14px; margin-bottom: 28px;
+}
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--sh-sm);
+}
+.chart-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 18px; }
+.chart-wrap  { position: relative; height: 220px; }
+
+/* ─── Table ─── */
+.table-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--sh-sm); margin-bottom: 28px;
+}
+.table-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+}
+.table-card-title { font-size: 14px; font-weight: 700; }
+.table-card-meta  { font-size: 12px; color: var(--text-3); }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: #f8fafc; }
+th {
+  padding: 10px 16px; text-align: left;
+  font-size: 11px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td { padding: 12px 16px; border-bottom: 1px solid var(--border-2); font-size: 13px; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tbody tr { transition: background .1s; }
+tbody tr:hover td { background: #f8fafc; }
+.store-name  { font-weight: 600; color: var(--text); }
+.store-brand { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.star-filled { color: var(--amber); }
+.star-empty  { color: #d1d5db; }
+.rating-num  { color: var(--text-2); font-size: 12px; margin-left: 3px; }
+.badge-red {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 7px;
+  background: var(--red); color: #fff; border-radius: 11px;
+  font-size: 11px; font-weight: 700;
+}
+.badge-zero { color: var(--text-3); font-size: 13px; }
+
+/* ─── Tab Panes ─── */
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ─── Reviews ─── */
+.review-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 18px; flex-wrap: wrap;
+}
+.review-select {
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 7px 30px 7px 12px; font-size: 13px; color: var(--text);
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748b' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  background-color: #fff; outline: none;
+}
+.filter-chips { display: flex; gap: 6px; }
+.chip {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--surface); color: var(--text-2); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.chip.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.chip:hover:not(.active) { border-color: var(--blue); color: var(--blue); }
+
+.reviews-list { display: flex; flex-direction: column; gap: 12px; }
+.review-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--sh-sm);
+}
+.review-top {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 12px;
+}
+.reviewer { display: flex; align-items: center; gap: 12px; }
+.avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-pale) 0%, #dbeafe 100%);
+  color: var(--blue); font-weight: 800; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.reviewer-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.reviewer-meta { font-size: 12px; color: var(--text-2); }
+.store-tag {
+  font-size: 11px; color: var(--blue); background: var(--blue-pale);
+  padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-left: 6px;
+}
+.reply-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
+  border-radius: 20px; font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.reply-pill.replied   { background: #dcfce7; color: #16a34a; }
+.reply-pill.unreplied { background: #fef2f2; color: #dc2626; }
+.review-body { font-size: 14px; color: var(--text); line-height: 1.7; margin-bottom: 14px; }
+.reply-box {
+  background: #f8fafc; border-radius: 8px; padding: 14px;
+  font-size: 13px; color: var(--text-2); line-height: 1.6;
+}
+.reply-box-label {
+  font-size: 10px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px;
+}
+.btn-row { display: flex; gap: 8px; }
+.btn { padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-ghost { background: none; color: var(--text-2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); color: var(--text); }
+
+/* ─── Posts ─── */
+.post-wrap { max-width: 720px; }
+.post-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; box-shadow: var(--sh-sm);
+}
+.field-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.select-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.store-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-bottom: 24px;
+}
+.store-check-label {
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 12px; line-height: 1.3;
+  transition: all .15s; color: var(--text-2);
+}
+.store-check-label:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-pale); }
+.store-check-label input { cursor: pointer; accent-color: var(--blue); }
+.post-textarea {
+  width: 100%; height: 140px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+  font-size: 14px; font-family: inherit; resize: vertical;
+  margin-bottom: 16px; color: var(--text); outline: none;
+  transition: border-color .15s; line-height: 1.6;
+}
+.post-textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+.post-footer { display: flex; align-items: center; gap: 14px; }
+.char-count { font-size: 12px; color: var(--text-3); }
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+.empty { text-align: center; padding: 64px 20px; color: var(--text-3); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-badge">M</div>
+      <div>
+        <div class="logo-name">MEO Manager</div>
+        <div class="logo-sub">Googleビジネスプロフィール統合管理</div>
+      </div>
+    </div>
+    <div class="header-controls">
+      <select class="hdr-select" id="storeSelector" onchange="updateDashboard()">
+        <option value="all">🏢 全店舗</option>
+      </select>
+      <select class="hdr-select" id="monthSelector" onchange="updateDashboard()"></select>
+    </div>
+  </div>
+  <div class="header-accent"></div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('dashboard',this)">ダッシュボード</button>
+  <button class="tab-btn" id="review-tab-btn" onclick="switchTab('reviews',this)">
+    口コミ管理<span class="tab-badge" id="unreplied-badge">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('posts',this)">最新情報投稿</button>
+</nav>
+
+<main class="main">
+
+  <!-- Dashboard Tab -->
+  <div id="tab-dashboard" class="tab-pane active">
+    <div class="section-label" id="summary-label">月次サマリー — 全店舗合計</div>
+    <div class="cards-row">
+      <div class="kpi-card">
+        <div class="kpi-label">表示回数</div>
+        <div class="kpi-value" id="kv-views">—</div>
+        <div class="kpi-trend" id="kt-views"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">検索数</div>
+        <div class="kpi-value" id="kv-searches">—</div>
+        <div class="kpi-trend" id="kt-searches"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">ルート検索</div>
+        <div class="kpi-value" id="kv-routes">—</div>
+        <div class="kpi-trend" id="kt-routes"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">電話タップ</div>
+        <div class="kpi-value" id="kv-calls">—</div>
+        <div class="kpi-trend" id="kt-calls"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">平均評価</div>
+        <div class="kpi-value" id="kv-rating">—</div>
+        <div class="kpi-trend" id="kt-rating"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">今月の口コミ</div>
+        <div class="kpi-value" id="kv-reviews">—</div>
+        <div class="kpi-trend" id="kt-reviews"></div>
+      </div>
+    </div>
+
+    <div class="section-label">トレンド分析（6ヶ月推移）</div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">📈 表示回数の月次推移</div>
+        <div class="chart-wrap"><canvas id="viewsChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">⚡ アクション数の月次推移</div>
+        <div class="chart-wrap"><canvas id="actionsChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">⭐ 店舗別平均評価</div>
+        <div class="chart-wrap"><canvas id="ratingsChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-label">店舗一覧</div>
+    <div class="table-card">
+      <div class="table-card-header">
+        <div class="table-card-title">全店舗パフォーマンス</div>
+        <div class="table-card-meta" id="table-meta"></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>店舗名</th>
+            <th>表示回数</th>
+            <th>前月比</th>
+            <th>平均評価</th>
+            <th>今月の口コミ</th>
+            <th>最終投稿日</th>
+            <th>今月の投稿</th>
+            <th>未返信口コミ</th>
+          </tr>
+        </thead>
+        <tbody id="store-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Reviews Tab -->
+  <div id="tab-reviews" class="tab-pane">
+    <div class="review-toolbar">
+      <select class="review-select" id="reviewStoreSelect" onchange="renderReviews()">
+        <option value="all">全店舗</option>
+      </select>
+      <div class="filter-chips">
+        <button class="chip active" onclick="setReviewFilter('all',this)">すべて</button>
+        <button class="chip" onclick="setReviewFilter('unreplied',this)">未返信のみ</button>
+        <button class="chip" onclick="setReviewFilter('high',this)">★4以上</button>
+        <button class="chip" onclick="setReviewFilter('low',this)">★3以下</button>
+      </div>
+    </div>
+    <div class="reviews-list" id="reviews-list"></div>
+  </div>
+
+  <!-- Posts Tab -->
+  <div id="tab-posts" class="tab-pane">
+    <div class="post-wrap">
+      <div class="post-card">
+        <div class="field-label">投稿先店舗を選択</div>
+        <div class="select-actions">
+          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="selectAllStores(true)">すべて選択</button>
+          <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="selectAllStores(false)">選択解除</button>
+        </div>
+        <div class="store-grid" id="post-store-grid"></div>
+        <div class="divider"></div>
+        <div class="field-label">投稿内容</div>
+        <textarea class="post-textarea" id="postText"
+          placeholder="最新情報（キャンペーン・メニュー変更・イベントなど）を入力してください..."
+          maxlength="1500" oninput="updateCharCount()"></textarea>
+        <div class="post-footer">
+          <button class="btn btn-primary" onclick="handlePost()">投稿する（モック）</button>
+          <span class="char-count" id="charCount">0 / 1500文字</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ============================================================
+   DATA LAYER — フェーズ2でGBP APIの結果に置き換える
+   ============================================================ */
+
+const STORES = [
+  {
+    "id": 1,
+    "name": "葡萄日和 ヨイノクチ",
+    "brand": "葡萄日和"
+  },
+  {
+    "id": 2,
+    "name": "博多うまかもん ぶあいそ 南3条店",
+    "brand": "博多うまかもん"
+  },
+  {
+    "id": 3,
+    "name": "台湾夜市 カシンフウ",
+    "brand": "台湾夜市"
+  },
+  {
+    "id": 4,
+    "name": "丸海屋 日本生命札幌ビル店",
+    "brand": "丸海屋"
+  },
+  {
+    "id": 5,
+    "name": "スペイン バル トーティラ フラット 札幌駅北口店",
+    "brand": "スペイン"
+  },
+  {
+    "id": 6,
+    "name": "酒肴日和 アテニヨル 日本生命札幌ビル店",
+    "brand": "酒肴日和"
+  },
+  {
+    "id": 7,
+    "name": "酒肴日和 アテニヨル 清明北一西三",
+    "brand": "酒肴日和"
+  },
+  {
+    "id": 8,
+    "name": "北海道食市場 丸海屋 南3条店",
+    "brand": "北海道食市場"
+  },
+  {
+    "id": 9,
+    "name": "博多ぶあいそ 札幌別邸",
+    "brand": "博多ぶあいそ"
+  },
+  {
+    "id": 10,
+    "name": "北海道食市場 丸海屋離",
+    "brand": "北海道食市場"
+  }
+];
+
+const MONTHS = ["2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08"];
+const MONTH_LABELS = ["26/3月", "26/4月", "26/5月", "26/6月", "26/7月", "26/8月"];
+
+const MONTHLY_DATA = {
+  "1": {
+    "2026-03": {
+      "views": 26381,
+      "searches": 26381,
+      "routes": 300,
+      "calls": 58,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 19511,
+      "searches": 19511,
+      "routes": 235,
+      "calls": 40,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 18027,
+      "searches": 18027,
+      "routes": 301,
+      "calls": 35,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 18776,
+      "searches": 18776,
+      "routes": 349,
+      "calls": 59,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 21285,
+      "searches": 21285,
+      "routes": 315,
+      "calls": 38,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 11020,
+      "searches": 11020,
+      "routes": 106,
+      "calls": 20,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "2": {
+    "2026-03": {
+      "views": 5570,
+      "searches": 5570,
+      "routes": 420,
+      "calls": 71,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 3911,
+      "searches": 3911,
+      "routes": 219,
+      "calls": 69,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 4197,
+      "searches": 4197,
+      "routes": 250,
+      "calls": 67,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 4241,
+      "searches": 4241,
+      "routes": 240,
+      "calls": 55,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 4875,
+      "searches": 4875,
+      "routes": 215,
+      "calls": 45,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 3069,
+      "searches": 3069,
+      "routes": 84,
+      "calls": 20,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "3": {
+    "2026-03": {
+      "views": 4628,
+      "searches": 4628,
+      "routes": 549,
+      "calls": 72,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 4221,
+      "searches": 4221,
+      "routes": 425,
+      "calls": 54,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 4082,
+      "searches": 4082,
+      "routes": 368,
+      "calls": 36,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 3935,
+      "searches": 3935,
+      "routes": 330,
+      "calls": 71,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 4212,
+      "searches": 4212,
+      "routes": 313,
+      "calls": 43,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 2381,
+      "searches": 2381,
+      "routes": 180,
+      "calls": 18,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "4": {
+    "2026-03": {
+      "views": 43319,
+      "searches": 43319,
+      "routes": 309,
+      "calls": 76,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 31590,
+      "searches": 31590,
+      "routes": 248,
+      "calls": 86,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 35849,
+      "searches": 35849,
+      "routes": 293,
+      "calls": 62,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 34486,
+      "searches": 34486,
+      "routes": 234,
+      "calls": 57,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 39404,
+      "searches": 39404,
+      "routes": 296,
+      "calls": 79,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 20518,
+      "searches": 20518,
+      "routes": 144,
+      "calls": 28,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "5": {
+    "2026-03": {
+      "views": 7804,
+      "searches": 7804,
+      "routes": 167,
+      "calls": 30,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 6299,
+      "searches": 6299,
+      "routes": 133,
+      "calls": 15,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 6587,
+      "searches": 6587,
+      "routes": 102,
+      "calls": 13,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 6813,
+      "searches": 6813,
+      "routes": 134,
+      "calls": 10,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 13476,
+      "searches": 13476,
+      "routes": 124,
+      "calls": 10,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 7190,
+      "searches": 7190,
+      "routes": 66,
+      "calls": 14,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "6": {
+    "2026-03": {
+      "views": 7974,
+      "searches": 7974,
+      "routes": 215,
+      "calls": 43,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 6848,
+      "searches": 6848,
+      "routes": 207,
+      "calls": 37,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 6765,
+      "searches": 6765,
+      "routes": 164,
+      "calls": 31,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 6440,
+      "searches": 6440,
+      "routes": 169,
+      "calls": 25,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 7420,
+      "searches": 7420,
+      "routes": 210,
+      "calls": 51,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 3953,
+      "searches": 3953,
+      "routes": 110,
+      "calls": 26,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "7": {
+    "2026-03": {
+      "views": 14279,
+      "searches": 14279,
+      "routes": 217,
+      "calls": 31,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 13092,
+      "searches": 13092,
+      "routes": 200,
+      "calls": 48,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 14362,
+      "searches": 14362,
+      "routes": 221,
+      "calls": 33,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 14423,
+      "searches": 14423,
+      "routes": 237,
+      "calls": 39,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 16518,
+      "searches": 16518,
+      "routes": 239,
+      "calls": 34,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 9095,
+      "searches": 9095,
+      "routes": 120,
+      "calls": 20,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "8": {
+    "2026-03": {
+      "views": 0,
+      "searches": 0,
+      "routes": 0,
+      "calls": 0,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 0,
+      "searches": 0,
+      "routes": 0,
+      "calls": 0,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 467,
+      "searches": 467,
+      "routes": 42,
+      "calls": 0,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 1144,
+      "searches": 1144,
+      "routes": 113,
+      "calls": 3,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 3008,
+      "searches": 3008,
+      "routes": 178,
+      "calls": 16,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 1133,
+      "searches": 1133,
+      "routes": 46,
+      "calls": 5,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "9": {
+    "2026-03": {
+      "views": 31275,
+      "searches": 31275,
+      "routes": 959,
+      "calls": 207,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 25116,
+      "searches": 25116,
+      "routes": 719,
+      "calls": 166,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 28586,
+      "searches": 28586,
+      "routes": 1136,
+      "calls": 201,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 27882,
+      "searches": 27882,
+      "routes": 944,
+      "calls": 182,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 30261,
+      "searches": 30261,
+      "routes": 766,
+      "calls": 164,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 15827,
+      "searches": 15827,
+      "routes": 307,
+      "calls": 49,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  },
+  "10": {
+    "2026-03": {
+      "views": 13624,
+      "searches": 13624,
+      "routes": 448,
+      "calls": 47,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-04": {
+      "views": 12253,
+      "searches": 12253,
+      "routes": 443,
+      "calls": 79,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-05": {
+      "views": 12886,
+      "searches": 12886,
+      "routes": 536,
+      "calls": 78,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-06": {
+      "views": 12943,
+      "searches": 12943,
+      "routes": 523,
+      "calls": 70,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-07": {
+      "views": 14808,
+      "searches": 14808,
+      "routes": 451,
+      "calls": 48,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    },
+    "2026-08": {
+      "views": 7872,
+      "searches": 7872,
+      "routes": 143,
+      "calls": 22,
+      "rating": 4.0,
+      "newReviews": 0,
+      "posts": 0,
+      "unreplied": 0,
+      "lastPost": "2026-08-19"
+    }
+  }
+};
+
+const REVIEWS = [
+  {
+    "id": "AbFvOqmpFVjH9m8Onmil7Ok3XoVQaNPm4n630o_kDbvOIsF1cxnAztltUETW0L0yL1ArlJ6dgHsQvA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "TZUYU",
+    "initial": "T",
+    "date": "2026-07-04",
+    "rating": 3,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqnj-7yCYlbPDTbIYTcjQ8tpQFZi3FJDCKMaa-pdS1QkWZz8W_6UFfyazNg8QAhJ_nQTfgH71Q",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "sanae arai",
+    "initial": "s",
+    "date": "2026-06-28",
+    "rating": 4,
+    "text": "ナチュールワインも、道産のワインも扱っているので少しずつ飲み比べたりするのに、楽しいお店です。\n\nピザやパスタも美味しいですし、自家製のお豆腐のチャームが個人的には、メニューでも食べたいくらいです\n\n(Translated by Google)\nThis is a fun place to try different wines, as they offer both natural wines and wines from Hokkaido.\n\nThe pizza and pasta are delicious, and I personally would love to see their homemade tofu appetizer on the menu.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqnS7kYAP6epTDOI5Gu_8Wd_YZM9BA_EfIKyCivHmeQUGzlOav3whkyVVmPuALwRNOv_nVWs",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "おかな",
+    "initial": "お",
+    "date": "2026-06-04",
+    "rating": 4,
+    "text": "夜に訪問\nお料理はどれも美味しくて、ワインが進みました。\nただ、椅子が高さがあり\nお酒を飲みながら座るには少し怖かったです。\n\n(Translated by Google)\nI visited in the evening.\nAll the dishes were delicious, and the wine went down very well.\nHowever, the chairs were quite high, and it was a little scary to sit there while drinking alcohol.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqloFg972qDZZzVA2SYumsYQZ-GBtJ_tNBmz9WevRMIORdJus531mTPYhzdHfoE6-XA8FXWHOg",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "辻英樹",
+    "initial": "辻",
+    "date": "2026-05-02",
+    "rating": 5,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqnIKCda-idGXcyBB1COn56vi7FhOqEd3KYS88MJ0GUzHqzs9zEedfll3mbxenDirHi8GPrGnw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "てひ",
+    "initial": "て",
+    "date": "2026-04-23",
+    "rating": 3,
+    "text": "葡萄日和 ヨイノクチでランチ利用しました。今回はピザとパスタを注文しましたが、どちらも満足度が高く、ゆったりとした時間を過ごせる良いお店でした。\n\nまずピザは生地の食感が良く、外は程よく香ばしく中はもっちりとしていて食べ応えがあります。具材とのバランスも良く、シンプルながらしっかり美味しさを感じられる一枚でした。パスタも丁寧に作られていて、ソースとの絡みが良く最後まで飽きずに楽しめます。\n\n店内は落ち着いた雰囲気で居心地が良く、ランチタイムでもゆっくり食事ができるのが嬉しいポイント。気軽に入れるのに、料理はしっかり美味しいというバランスの良さが印象的でした。\n\n全体として満足度が高く、また近くに来た際には再訪したいと思えるお店です。ピザやパスタをゆっくり楽しみたい方にはおすすめできます。\n\n(Translated by Google)\nI had lunch at Budou Biyori Yoinokuchi. I ordered pizza and pasta, and both were very satisfying. It's a great place to relax and enjoy yourself.\n\nFirst, the pizza had a great crust texture; it was nicely crispy on the outside and chewy on the inside, making it very satisfying. The toppings were well-balanced, and it was a simple yet delicious pizza. The pasta was also carefully prepared, and the sauce coated it well, making it enjoyable to the last bite.\n\nThe restaurant has a calm and comfortable atmosphere, and it's great that you can enjoy a leisurely meal even during lunchtime. The balance between being easy to enter and having truly delicious food was impressive.\n\nOverall, I was very satisfied, and I would like to revisit this restaurant if I'm in the area again. I would recommend it to anyone who wants to enjoy pizza and pasta at a relaxed pace.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqlSviGzY7Hw4zH5yzzJ3AjQwFvrXAvD8CSfq9LK-5O-OkrTdhlw1ZbEyIJwO3BELyBAotl-",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "kenichi kurosawa",
+    "initial": "k",
+    "date": "2026-03-26",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqkEkzkeIbTn7_SBFuXNocrLGrd_6BDrSl6to0Fn2lqm0Mb5pOXnd8LqzEqm7HYWnj9e16i9Nw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "plus minus 0",
+    "initial": "p",
+    "date": "2026-03-15",
+    "rating": 3,
+    "text": "コースで利用しました\n移転オープン時に訪問した以来です\n18:00台は空いてますね\nまずはビールで乾杯\nその後は、スパークリング〜白ワインをまあまあたくさん笑\nフードは、ワインに合うアテが多く、グラスと箸が進みます\nとうもろこしの天ぷら、美味しかった〜\n2時間飲み放題して、次の店に移ります❗️\n\n(Translated by Google)\nWe used their course menu.\nIt's been a while since our last visit, when they reopened after relocating.\nIt was pretty empty around 6 PM.\nFirst, a toast with beer.\nAfter that, we had quite a bit of sparkling wine and white wine, haha.\nThe food had many dishes that paired well with wine, and we kept drinking and eating.\nThe corn tempura was delicious!\nWe had 2 hours of all-you-can-drink and then moved on to the next place!",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqntfrekxUU4i0lDqtd0mBHVNwupT2IeHECuP3DWU--Ku-zVacN--qxNDcqMbqooYw5vqDP0Rg",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Saya",
+    "initial": "S",
+    "date": "2026-03-14",
+    "rating": 5,
+    "text": "4時間の飲み放題コースで昼飲みしました。店員さんも親切丁寧で、お料理もとても美味しかったです。スパークリングワインがとても美味しくて沢山おかわりしてしまいました。他のメニューも美味しそうなので、普通のランチでも利用してみたいです。\n\n(Translated by Google)\nWe enjoyed a 4-hour all-you-can-drink lunch. The staff were kind and attentive, and the food was delicious. The sparkling wine was especially good, and we had many refills. The other menu items looked delicious, so I'd like to try it again for a regular lunch.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqm0pcBHbKS05mTAovygprlb-EPt1xsbn2Fscicx6OOoze-QVwLmHYw8NkyxA2aeU1Vy8YDayg",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Yukiko",
+    "initial": "Y",
+    "date": "2025-04-13",
+    "rating": 5,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は「葡萄日和 ヨイノクチ」にご来店いただき、そして心温まる★5の評価をお寄せくださり、誠にありがとうございます。\n\nお食事・サービス・雰囲気すべてにご満足いただけたこと、大変光栄に思います。\n\nこれからも「葡萄日和 ヨイノクチ」でのひとときが、皆さまにとって心地よい時間となるよう、スタッフ一同努めてまいります。\nまたのご来店を心よりお待ちしております。",
+    "replyDate": "2025-05-06"
+  },
+  {
+    "id": "AbFvOqk8r_kQScqxfa4OWpfbGH5an0Wz8J11CaHpJ5MssaWS6si4bF1aFpHPtKU5s6em0fWpVSYt6A",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "ちょびたん",
+    "initial": "ち",
+    "date": "2026-03-07",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqmSCvloMm_e_mgPrFXHtfnOC4tzomQJBSC3gQBcJGMayFOLjGQcPcYR4LXwX8Q3hL-G0zyQ8Q",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "山下純子",
+    "initial": "山",
+    "date": "2026-02-22",
+    "rating": 4,
+    "text": "久しぶりにきました　落ち着いたおしゃれな空間が大好きです　予約者には手書きで名前を書いておいてあり　注文は直接伝えるのはいいと思いました　ホールスタッフはお一人で大変だったと思いますが心のこもったサービスが嬉しかったどす\n\n(Translated by Google)\nIt's been a while since I last came here. I love the calm and stylish atmosphere. Reservations are made with handwritten names, and I thought it was great that you can order directly. I'm sure it was hard for the wait staff to work alone, but I was pleased with their thoughtful service.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqmWKHDQYTYgZR3A5rAjHNmskf9eS84TW7VVx6Tae60-f3TZXIKWQPOGYgmdAU-XKce-7Lv91Q",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "内堀豪",
+    "initial": "内",
+    "date": "2026-02-21",
+    "rating": 1,
+    "text": "兎にも角にも接客業では無いですね。流行りの店かな。\n系列店も同等でしょう。\n\n(Translated by Google)\nIn any case, it's not a customer service business. I guess it's a trendy store. I'm sure the chain stores are the same.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqnq5RulCjeASIDfLV24nuMSdPAy5jVd6MvvF6Z_6STL0VYreTM-uoN-TF-mudw7ZMmgQsxL0g",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "ride 01",
+    "initial": "r",
+    "date": "2026-01-30",
+    "rating": 2,
+    "text": "結論、イマイチでした。メニューをとりに来るのは遅いし、出てくるのも遅いし、アルバイトの店員でしょうけどイマイチな接客でしたし、料理も…\n50代の私は二度と行くことはないでしょう。\n\n(Translated by Google)\nIn conclusion, it wasn't great. They were slow to come and take the menu, and it was slow to come out. The staff were probably part-timers, but the service was not great, and the food was...\nAs a person in my 50s, I will never go there again.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqn2AZW7oxqOcg1D2Gtj2XwiEd4ywGRpovlWdUCcJ7_m8U4kKFVpapONuZ46k8svLr7I-yeEbw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "きき",
+    "initial": "き",
+    "date": "2026-01-11",
+    "rating": 3,
+    "text": "ランチで2名で予約して行きました。カウンター席に案内されました。\n真冬だったのでコートやカバンや手荷物があったのですが、椅子の下に入れるしかなくて、とても狭く窮屈でした。そこだけが残念でした。\n\n(Translated by Google)\nWe made a reservation for lunch for two people and were shown to a counter seat. \nIt was the middle of winter, so we had our coats, bags, and other belongings, but we had no choice but to fit them under the chairs, which made it very cramped and uncomfortable. That was the only disappointing thing.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqk0tXx79iEn8qVgUguvMuqTYSG3LpyWV91mjOWUpg6WrJ_oxJbjSwzYJ2CSdrSIFa3vPfCCsg",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Naoki Akita",
+    "initial": "N",
+    "date": "2026-01-03",
+    "rating": 5,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqkcj_gXRLI3_9RjCs20Po0azIKOX5evDXCSLmiQwa-9Xf4tHNcKocdo3aA3YYT1E2iQA84d",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "pom",
+    "initial": "p",
+    "date": "2025-12-15",
+    "rating": 4,
+    "text": "【札幌駅まで徒歩すぐのオシャレなイタリアン】\n\nご飯も美味しくて比較的すぐ出てきます\n直接伺った場合は飲み放題はなし\nコースか事前に食べログなどで申し込んだ場合は1,580円で飲み放題を単品でつけられるようです。\n\nワインの種類は比較的多いですが量が規定の量しか入っていないのでたっぷり単品で飲みたい方には少し不向きかも？\n\nただ無花果のパテや鶏もも肉のスパイスチキンやピザなどつまみながら食べれるメニューが豊富でした。ピザも薄いのでサクサクとして食べやすいです。\n\n《頼んだメニュー》\n厚真鶏もも肉のスパイスチキン(1,200円)\n無花果のクリームチーズのパテ(720円)\nえびのアヒージョ\n季節のピザ(1,400円程度)\nお通し ラペ(1人500円)\n\n入り口がよく開くので結構冷えるのと店内結構狭いので大人数では入れないかもしれません。\n\n(Translated by Google)\n[A stylish Italian restaurant just a short walk from Sapporo Station]\n\nThe food is delicious and comes relatively quickly.\n\nThere's no all-you-can-drink option if you visit in person.\n\nIf you order a course or book in advance via Tabelog, you can add all-you-can-drink to your order for ¥1,580.\n\nThe wine selection is fairly extensive, but the portions are limited, so it might not be ideal for those looking for a large selection.\n\nHowever, there was a wide selection of snacks to choose from, including fig pâté, spiced chicken thighs, and pizza. The pizza was thin and crispy, making it easy to eat.\n\n\n[Our Orders]\nAtsuma Chicken Thigh Spiced Chicken (¥1,200)\nFig Cream Cheese Pâté (¥720)\nShrimp Ajillo\nSeasonal Pizza (around ¥1,400)\nAppetizer: Rapé (¥500 per person)\n\nThe entrance opens frequently, so it can get quite chilly, and the restaurant is quite small, so it might not be suitable for large groups.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqncGN7W-kT1mP-3wS1lg9KqwjRNka-bOoAy_g4Dx27LzGx_6m61grSW6uER4yo8q1njdXoj0A",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "中村陽一",
+    "initial": "中",
+    "date": "2025-12-15",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOql42YYci2eY-eAeDkswtwCR9dwKCMSmlBvPJSFJhDWSllUuSYOYMVLyZ45O5cZtDRd0mVFXpA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "にゃんちゃん",
+    "initial": "に",
+    "date": "2025-12-12",
+    "rating": 1,
+    "text": "お客さんがいない時間だったからかもしれないけど、いきなり目の前で洗剤使って掃除を始めてガッカリした。知り合いからオススメされた雰囲気のいいお店なだけあってガッカリ。飲み物とかはきちんと説明してくれてよかっただけに。もう行かないし、オススメもしない\n\n(Translated by Google)\nMaybe it was because there were no customers there, but I was disappointed when they suddenly started cleaning with detergent right in front of me. It was a nice restaurant recommended by an acquaintance, so I was disappointed. It was good that they explained the drinks etc. properly. I won't go there again, and I don't recommend it.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqlyJNOAPFTS8tUjTl-kZZFojKn3rnKrbR4PXVUGrXGtt5onPMln7IY3cC9xrDi740go07eBDQ",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "ありちグルメ",
+    "initial": "あ",
+    "date": "2025-12-09",
+    "rating": 4,
+    "text": "札幌｜女子会・ちょい飲みにぴったり🥂\n\n旧エスタ前、札幌駅から歩いてすぐのコスパ最強イタリアン🍝\n\nお店の雰囲気もいいしオシャレだしリーズナブルでおすすめ！さくっと飲む時とか女子会とかによく利用するかも。\n\n変わり種のクリスピーピザが美味しい。\n(スモークチキンと葱のピザ絶品、、、🥹)\n\n昼飲みできるし3時間飲み放題メニューとかもあってお酒好きにもピッタリ◎\n\n(Translated by Google)\nSapporo | Perfect for girls' nights and quick drinks 🥂\n\nIn front of the old Esta, just a short walk from Sapporo Station, this Italian restaurant offers great value for money 🍝\n\nThe restaurant has a great atmosphere, is stylish, and reasonably priced, so I highly recommend it! I'll probably frequent it for a quick drink or a girls' night out.\n\nTheir unique crispy pizzas are delicious.\n(The smoked chicken and scallion pizza is amazing... 🥹)\n\nThey're open for daytime drinks and offer a 3-hour all-you-can-drink menu, making it perfect for those who love alcohol ◎",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqkltj8jkZuGvTbbjoDm_i5L8Cvg2PTr9yTkIS8TO8lPtOP1j2O2dF80saVRe-odV0JFPJu2jw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "あーさぁ",
+    "initial": "あ",
+    "date": "2025-12-09",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqn7SVqXLvJGslE3a23qnNIR25ltJya5bHuVriINiNuuWaAUF_4mg6UPIadWdKwPJlvOIUVTaQ",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "meg kim",
+    "initial": "m",
+    "date": "2025-09-26",
+    "rating": 3,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqkUUbnSB9mr-6NFpIsNgryvCc8yld4Nad7u4BAUBCSCFJ88tANEWlrzz2zlFzmlDUlEM8H-kQ",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Norimasa Tanabe",
+    "initial": "N",
+    "date": "2025-09-23",
+    "rating": 5,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqnBsvugsbsoIJK7OQfRBPKIQfReEiFyJOE8-bLbfwu82v0rmaWfHrUpLVADn7va68j6b_Ve0g",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "シン",
+    "initial": "シ",
+    "date": "2025-09-21",
+    "rating": 5,
+    "text": "料理も美味しく、ワインも飲み比べ出来るのでとても楽しい時間を過ごせました。\n\n(Translated by Google)\nThe food was delicious, and being able to compare different wines made for a very enjoyable time.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqkJ-oX6S579s1C_MCYgRkr8VvI5XnWTYHHHl2mgzQMrQOboloBgmwj0JTwrVImB4wADcTJrJA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "2 A",
+    "initial": "2",
+    "date": "2025-09-04",
+    "rating": 4,
+    "text": "バスまでの時間があったので、お一人様で飲み比べしました。北海道ワイン、ほんと美味しくなりましたね。\n\n(Translated by Google)\nSince I had some time before my bus, I did a wine tasting by myself. Hokkaido wines have really gotten delicious.",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqm_0hZH7FqIGlE8GtHWnwHyxINlQ-N_XmNXFtPsEOE_Zg76PNhWkzX_DxuTuMWefdoEWNoU",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "tsuneki yamazaki",
+    "initial": "t",
+    "date": "2025-08-09",
+    "rating": 3,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqlqGzaYOoBrMx_g3CWA8dRtppQWDoOn4r7h7ePO2aoAY4gK1nziM0lHVpJZeknsLWuhcxwC8A",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "オニギリマル",
+    "initial": "オ",
+    "date": "2025-07-25",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqlZAC04VCQXpIMgVMXlkFQrdlI1_wTiIjYraGYOFvr6zFNyac4XpsdBx1DgUgt-W-RccGlNHg",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "渡部貴裕",
+    "initial": "渡",
+    "date": "2025-07-19",
+    "rating": 3,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "このたびは葡萄日和 ヨイノクチをご利用いただき、またお時間を割いて口コミを投稿いただき誠にありがとうございます。\n評価を拝見し、ご期待に沿いきれなかった点もあったのではと感じております。今後、よりご満足いただけるようサービス・品質ともに見直しを進めてまいります。\nまたのご来店を心よりお待ちしております。\n",
+    "replyDate": "2025-07-21"
+  },
+  {
+    "id": "AbFvOqmH76yr541JEeBxjjvXAgu2eebVuXhMiu8ZLvSTUvBQdcjA82bQsExV69k_bF83o8Lgvhel8w",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "1234",
+    "initial": "1",
+    "date": "2025-07-11",
+    "rating": 5,
+    "text": "二軒目の人がおおそう\n早めの時間ならそんなに混んでいない\n\n(Translated by Google)\nIt looks like a lot of people are going to their second stop.\nIt's not that crowded if you go earlier in the day.",
+    "replied": true,
+    "replyText": "この度は「葡萄日和 ヨイノクチ」へご来店いただき、また高評価を賜り誠にありがとうございます。\nお料理やサービス、雰囲気にご満足いただけたとのこと、大変うれしく拝見いたしました。\n曜日や時間帯によって異なる混雑状況も参考にしていただき、またぜひゆったりとした時間にお立ち寄りくださいませ。\nまたのご来店を心よりお待ちしております。",
+    "replyDate": "2025-07-21"
+  },
+  {
+    "id": "AbFvOqkvx2HDW8k4gg5It3mUBOwHJ4ZWHdah9XNVOzSKzXvbMf_qO7TR8WTp_ws0o9dYVQqvKEVM",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Conservative_Y",
+    "initial": "C",
+    "date": "2025-07-09",
+    "rating": 3,
+    "text": "2025.07.01\n・札幌駅前の東急デパートの東側角、カラオケ店などが入ったビルの1階にあります。\n・ワインとワインに合う料理を提供してくれるお店で、場所柄がっちり飲むと言うよりはさらっと軽く食べて飲むと言った感じのお店です。\n・夕食後、軽く飲むために立ち寄り、カウンターに通されました。チャームが豆腐アレンジの品で、おつまみとして、ミックスナッツにいぶりがっことクリームチーズを注文しました。ピザも手作りをしていそうなので、次回は注文してみたいと思います。\n・お酒は、道産ワインを取り扱っていましたが、食事後ということで、重くないピノノワールにしました。グラスで900円とのことで、まずまずですが、セ○マで売ってる銘柄にとてもよく似ています。\n・電車や地下鉄などの待ち時間にさらりと飲んで帰るのが粋かもしれません。\n\n(Translated by Google)\n2025.07.01\n* Located on the first floor of a building that also houses a karaoke bar, on the east corner of the Tokyu Department Store in front of Sapporo Station.\n* This restaurant serves wine and dishes that pair well with wine. Given its location, it's more of a place for a light meal and drinks rather than a heavy drinking session.\n* I stopped by for a light drink after dinner and was seated at the counter. The complimentary snack was a tofu dish, and I ordered mixed nuts, smoked pickled radish, and cream cheese as appetizers. The pizza also seemed to be homemade, so I'd like to try that next time.\n* They serve Hokkaido wines, but since it was after dinner, I chose a light Pinot Noir. At 900 yen a glass, it was reasonable, but it was very similar to a brand sold at Seima.\n* It might be stylish to have a quick drink while waiting for a train or subway and then head home.",
+    "replied": true,
+    "replyText": "この度は「葡萄日和 ヨイノクチ」へご来店いただき、誠にありがとうございます。\nまた、詳しく丁寧なご感想をお寄せいただき、スタッフ一同大変嬉しく拝見いたしました。\n\nお食事やワインをゆっくりとお楽しみいただけたご様子で何よりです。\n当店の手づくりピザはご注文をいただいてから焼き上げておりますので、次回ぜひお試しください。\nまた、道産ワインについてのご意見も今後の参考とさせていただきます。\n\n札幌駅前でのちょっとしたひとときに、ふらりと立ち寄っていただけるようなお店を目指してまいります。\nまたのお越しを心よりお待ちしております。",
+    "replyDate": "2025-07-21"
+  },
+  {
+    "id": "AbFvOqlAhGmpoT8bB2uIhZV2azFfLsoWSf4BdBMpsX7JvFvHHtUJXYlJNJ7zRnnQa_8fZj3NhpbrZw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Meg",
+    "initial": "M",
+    "date": "2025-06-25",
+    "rating": 1,
+    "text": "(Translated by Google) A disaster! Unpleasant staff, a forgotten dish, a long wait, and a 2000 yen seat fee. We understand these charges, but there was no information provided or even any indication of them for the customer. We asked for a gesture of goodwill given the wait and the fact that one of us didn't eat, and in return, they threatened to call the police if we didn't pay. What a pathetic reaction!\n\n(Original)\nUne catastrophe , personnel désagréable , un plat oublié, de l'attente, et  des frais de  siège  à 2000 yens , nous comprenons ces frais mais là aucune information donnée ni apparente pour le client.  Nous avons demandé un geste commercial compte tenu de l'attente et du fait que l'un d'entre nous n'a pas mangé, en retour on vous menace d'appeler la police si vous ne payez pas. Quelle triste réaction !\nA disaster, unpleasant staff, a forgotten dish, a wait, and a 2000 yen seat fee, we understand these charges but there was no information given or apparent to the customer. We asked for a commercial gesture given the wait and the fact that one of us did not eat, in return you are threatened to call the police if you do not pay. What a sad reaction!",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqluIR4ASsGKzdQGL7l7lnrMgM1ec56tUNvaMfPZgCgukJ0mykTbWda_0-3aeR63wQ-UvbV-lg",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Jess F",
+    "initial": "J",
+    "date": "2025-05-07",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は「葡萄日和 ヨイノクチ」へご来店いただき、またご丁寧な評価をありがとうございます。\n\nお食事・サービス・雰囲気についてそれぞれ高いご評価をいただけましたこと、大変光栄に思っております。\n\n今後もよりご満足いただけるお時間をご提供できるよう、スタッフ一同努めてまいります。\nまたのお越しを心よりお待ちしております。",
+    "replyDate": "2025-06-29"
+  },
+  {
+    "id": "AbFvOqks6QgIjDk3bfy9ANBxDj8jIRfuQV1ZsLACFZinYIFRqaHZOij3eMNuJlVlH6V97dX_HLfSKA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "bass midi",
+    "initial": "b",
+    "date": "2025-04-01",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は『葡萄日和 ヨイノクチ』をご利用いただき、また星4つのご評価を誠にありがとうございます。\n\nお食事・サービス・雰囲気ともにご満足いただけたようで、スタッフ一同大変励みになります。これからも、より心地よくお過ごしいただけるお店を目指してまいります。\n\nまたのご来店を心よりお待ちしております。",
+    "replyDate": "2025-04-01"
+  },
+  {
+    "id": "AbFvOqnM2tfPPKFfm0pCQFqaEgAS37HVZU4kAN2-AiFeXO6YCXYm4tJgyfQT2kg3aSrGo7MCozuSGw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "N Y",
+    "initial": "N",
+    "date": "2025-03-24",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は『葡萄日和 ヨイノクチ』にご来店いただき、また嬉しいご評価をいただき誠にありがとうございます。\n\nワインに合わせたお料理や、雰囲気、そしてサービスにもご満足いただけたとのこと、大変光栄に存じます。お料理についても、さらにご期待を超えられるよう、これからも一品一品心を込めてご提供してまいります。\n\nぜひまた、季節ごとのおすすめアテとともにゆっくりとお楽しみください。スタッフ一同、心よりお待ちしております。",
+    "replyDate": "2025-04-01"
+  },
+  {
+    "id": "AbFvOqkJ2PRV7q_mrnawTV57AVKOKUPEe3-8wwz6YPz6tPPazpkJkDRRHozj28Yhtdi-AcBhvcIZ3w",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "トリカルヒス",
+    "initial": "ト",
+    "date": "2025-03-24",
+    "rating": 5,
+    "text": "駅前飲み🍺に最適です！\n\n(Translated by Google)\nPerfect for a drink in front of the station!",
+    "replied": true,
+    "replyText": "ご来店誠にありがとうございます！\n『駅前飲みに最適』との最高のお言葉、とても嬉しく拝見いたしました🍷✨\n\n昼飲みワインセットや豚のスネカジリなど、当店ならではのメニューをお楽しみいただけたようで何よりです。ランチタイムもワイン片手にくつろげる空間づくりを大切にしておりますので、またお近くにお越しの際はぜひ気軽にお立ち寄りください。\n\nまたのご来店を心よりお待ちしております！",
+    "replyDate": "2025-04-01"
+  },
+  {
+    "id": "AbFvOqklQqMuGJJqkFiQm6UTO63nwctvFriVh9FK1qtzjY_H5-DK4lsYcts8XfM-tklj8QiNDx7HPA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "T I",
+    "initial": "T",
+    "date": "2025-03-23",
+    "rating": 2,
+    "text": "食事は美味しいし雰囲気も◯。\n昼から夜まで通しで開いてるのも素晴らしいし\n北海道ワインのグラスもなかなか飲めない種類を8種類と良き。\nただし一点だけ難点はこの北海道ワイン、グラスでの量が少ない。3種類の飲み比べセットの量が少ないという口コミがあったが、1,200円とるならもう少し量が欲しい。その2/3から半分ですね。1500円とって通常の120ml飲んだ方が幸せです。旅行者で一度しか来ないなら言っても仕方ないが、地元者はこれなら何度も通うかは？です\n\n(Translated by Google)\nThe food is delicious and the atmosphere is great.\n\nIt's also wonderful that they're open all day, from lunch to dinner.\n\nThey offer eight kinds of Hokkaido wine by the glass, some of which are hard to find elsewhere, which is great.\n\nHowever, the only drawback is the small amount of wine served by the glass. There was a review that said the amount in the three-wine tasting set was small, but for 1,200 yen, I'd like a little more. It's about two-thirds to half of that amount. I'd be happier paying 1,500 yen for a regular 120ml serving. If you're a tourist and only coming once, it's understandable, but for a local, I'm not sure if they'd come back repeatedly.",
+    "replied": true,
+    "replyText": "この度は『葡萄日和 ヨイノクチ』にご来店いただき、また詳細なご感想をお寄せいただき誠にありがとうございます。\n\nお食事やお店の雰囲気、そして北海道ワインのラインナップについてご評価いただけたこと、大変うれしく思っております。\n\n一方で、グラスでの提供量について貴重なご意見を頂戴し、誠にありがとうございます。お客様のお声を参考に、よりご満足いただけるサービスを目指し、今後の見直しや工夫を検討してまいります。\n\nまた機会がございましたら、ぜひゆっくりとワインと料理のペアリングをお楽しみいただければ幸いです。ご来店、誠にありがとうございました。",
+    "replyDate": "2025-04-01"
+  },
+  {
+    "id": "AbFvOqlIn0H02o7hV3H0QbSz649FoCZSEqJsV3CMYUp9jKIXMxzbluFv0l5QLXpoRpo20WknyZtq_g",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "松本早苗",
+    "initial": "松",
+    "date": "2025-02-19",
+    "rating": 5,
+    "text": "北海道旅行最終日のランチで伺いました。駅から近く良かったです。お料理も美味しいですがスタッフさんが少なくてオーダーが少ししづらかったです。頼んだ物が届かなかったのに、料金に含まれていて少し残念でした。\n\n(Translated by Google)\nI went there for lunch on the last day of my trip to Hokkaido. It was conveniently located near the station. The food was delicious, but there were few staff members, so it was a little difficult to order. I was a little disappointed that the food I ordered never arrived, as it was included in the price.",
+    "replied": true,
+    "replyText": "この度は『葡萄日和 ヨイノクチ』にご来店いただき、また貴重なご意見をお寄せいただき誠にありがとうございます。\n\nお料理を楽しんでいただけたとのこと、大変嬉しく思います。一方で、ご注文時の対応に至らない点があり、ご不便をおかけしましたことをお詫び申し上げます。よりスムーズなオペレーションを心がけ、安心してお過ごしいただけるよう努めてまいります。\n\nまた機会がございましたら、ぜひお立ち寄りください。スタッフ一同、心よりお待ちしております。",
+    "replyDate": "2025-03-03"
+  },
+  {
+    "id": "AbFvOqlWaKavZuv_NbyZuJafPsD7ugecE247u5zx4qOr65j2tGjfoXsm_mWHHX3YhbJaYswzoet5",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "ICHIMEI KIN",
+    "initial": "I",
+    "date": "2025-02-09",
+    "rating": 5,
+    "text": "バスの時間まで短い時間だったので、お願いしたところ、早く提供いただき、会計もスムーズにと先にしていただけました。\nとてもありがたかったし、それでいて食事も美味しかったです。豚肉は噛み応えがあり、お吸い物も最高。次は飲みに来たいです。\n\n(Translated by Google)\nSince I had a short time before my bus, I asked if they could serve my food quickly, and they even let me pay in advance, which was very kind of them.\n\nI was very grateful, and the food was delicious. The pork was chewy, and the soup was superb. I'd like to come back for drinks next time.",
+    "replied": true,
+    "replyText": "この度は『葡萄日和 ヨイノクチ』にご来店いただき、また素敵な口コミと星5つの評価をありがとうございます！\n\nお食事の提供やお会計をスムーズに対応でき、お客様のお時間に間に合ったようで安心しました。さらに、お料理もご満足いただけたとのこと、大変嬉しく思います。\n\n次回はぜひ、ゆっくりとお酒を楽しみにいらしてくださいね。スタッフ一同、心よりお待ちしております！",
+    "replyDate": "2025-03-03"
+  },
+  {
+    "id": "AbFvOqkVwo8SDWjF-W83LIj7aP-I8UV0kQIAtxlCz85x_5USLRIwuNsk8AyDtQZDYDRFln0IzxKz",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "T B",
+    "initial": "T",
+    "date": "2025-02-08",
+    "rating": 4,
+    "text": "週末夜に来訪しました。\nオシャレな雰囲気のお店で主に女性客で賑わっていました。\nドリンクメニューも豊富で良かったです。\n札幌駅からのアクセスも良いです。\n\n(Translated by Google)\nI visited on a weekend evening.\nThe restaurant has a stylish atmosphere and was bustling with mostly female customers.\nThe drink menu was also extensive and great.\nIt's also easily accessible from Sapporo Station.",
+    "replied": true,
+    "replyText": "この度は『葡萄日和 ヨイノクチ』にご来店いただき、また嬉しいご感想と星4つの評価をありがとうございます！\n\nお店の雰囲気やドリンクメニューを楽しんでいただけたとのこと、大変嬉しく思います。週末の賑やかな雰囲気も感じていただけたようで、何よりです。札幌駅からのアクセスについてもご満足いただけたようで安心しました。\n\nこれからも、お客様に心地よい空間と美味しいお食事をご提供できるよう努めてまいります。ぜひまたの機会にご来店をお待ちしております！",
+    "replyDate": "2025-03-03"
+  },
+  {
+    "id": "AbFvOqkkUXVcdTIK05raC9VFWfKydAAMK_2dNKs49f-JnMN5cVAf_Vn6GVUpA4ejQ8mf_M-fhWFqHw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "み",
+    "initial": "み",
+    "date": "2025-01-26",
+    "rating": 2,
+    "text": "スパークリングワイン付のセットを注文したのですが、おつまみやワインなど他のメニューがきたのにも関わらず、スパークリングワインがいっこうに来ないので確認したら忘れていた様子で、謝罪もなく、出されました。（店も私達以外お客さんはいなかったし、スタッフ同士でおしゃべりもしてたので、もしかして確認しなければ来なかったのだろうか…。）\n\nワインを打ち出したお店でそういうセットをメニューとして出しているのに、最初に食前酒であるスパークリングワインを持ってこられなかったこと（ワインバーとして教育不足）、謝罪がなかったことが残念でした。\n\n価格帯はリーズナブルなので、普通の飲み会や二次会などは気軽に行けて良いと思います。\n\n(Translated by Google)\nWe ordered a set meal that included sparkling wine, but even though the other menu items, such as snacks and wine, arrived, the sparkling wine never arrived. When we checked, it seemed they had forgotten about it and was brought without any apology. (There were no other customers in the bar, and the staff were chatting with each other, so perhaps they wouldn't have brought it if they hadn't asked...)\n\nEven though this is a restaurant that promotes wine and offers such a set meal on the menu, it was disappointing that they didn't bring the aperitif sparkling wine first (a lack of training for a wine bar), and that they didn't apologize.\n\nThe prices are reasonable, so I think it's a good place for casual drinking parties or after-parties.",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、また貴重なご意見をお寄せいただき、誠にありがとうございます。\nリーズナブルな価格や、気軽にご利用いただける点を評価していただけたこと、大変嬉しく思います。\n\nしかしながら、スパークリングワインの提供が遅れた上、謝罪の対応がなかったとのこと、ご不快な思いをさせてしまい誠に申し訳ございませんでした。本来であれば、お食事の流れに沿ったスムーズな提供と、丁寧な対応を心がけるべきところ、至らなかったことを深く反省しております。\n\nいただいたご指摘を真摯に受け止め、スタッフのサービス意識を見直し、より心地よい時間をお過ごしいただけるよう努めてまいります。この度は貴重なご意見をいただき、誠にありがとうございました。",
+    "replyDate": "2025-02-03"
+  },
+  {
+    "id": "AbFvOqnifYRrJuJE9lmcSK4KYkkOnVNcOWVxBWwlgpGIcOcU68kHxLpON9bDjCpWeNsBOGzS0fMTcQ",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "こいあい",
+    "initial": "こ",
+    "date": "2023-11-08",
+    "rating": 4,
+    "text": "再訪2024.12\nWineBottleが昼飲みだと20%オフでお得です😊\n\n昼飲み二次会で訪問。\nワインの飲み比べセット、アテのセット等あり、ゆっくりゆったり飲めます😊\nただワインの量が少なめなので、呑兵衛には物足りないかも！\n\n(Translated by Google)\nReturned December 2024\nDrinking during the day on WineBottle is a great deal, with a 20% discount! 😊\n\nCame here for a post-day drinking party.\nThey offer wine tasting sets and snack sets, so you can enjoy a leisurely drink. 😊\nHowever, the wine portions are on the smaller side, so heavy drinkers might find it unsatisfying!",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqnUGHGekvqzTPwlQ1_RseCsZ9wBJOxKIgtQCYgrPjMS6NpUqpYiQ5LqSvwLsVniycfSfgpzLA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "北海道りんりん",
+    "initial": "北",
+    "date": "2025-01-06",
+    "rating": 2,
+    "text": "選べるワイン3種はちょっと値段の割に量が楽しめないかな〜。え？まさか？？この量...？新年の芸能人格付けチェックのワイン試飲より少なーい！\nかと言って、いきなり一種を頼むのも分からないし...。\n美味しいワインのアテだけど、ワインが「ゴクリ」で終わってしまう。\n分からない素人の為にもう少し優しさ(量ʬʬʬ)が欲しいですね。\nワインを分かっている人はボトルが良いのかな、それも高いけどねー\n\n(Translated by Google)\nThe three wines you can choose from are a bit disappointing in terms of quantity for the price. What? Seriously? This amount...? It's even less than the wine tasting on the New Year's celebrity ranking show!\n\nBut then again, ordering just one wine right away doesn't really help either...\n\nThe food is delicious and pairs well with the wine, but the wine is gone in a gulp.\n\nFor clueless people like me, a little more generosity (in terms of quantity, lol) would be nice.\n\nMaybe a bottle would be better for someone who knows wine, but that's expensive too.",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、また貴重なご意見をお寄せいただき、誠にありがとうございます。ワインとアテをお楽しみいただけた点は、大変嬉しく思っております。\n\n一方で、ワインの量についてご期待に添えず、申し訳ございませんでした。お客様からいただいたご意見を真摯に受け止め、より多くのお客様に楽しんでいただけるサービスやご提供方法について検討してまいります。\n\nこれからも、お客様に心地よい時間と満足いただける体験をお届けできるよう、努力を続けてまいります。この度は貴重なご指摘をありがとうございました。",
+    "replyDate": "2025-01-13"
+  },
+  {
+    "id": "AbFvOqm7ZrcuI7ngJ9XSJBX6RJEDYy_s_jbyC2EsnP1E-JyuXBNY9zReI_Il8lWiSA9vdplvfeIkKA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "かなこ",
+    "initial": "か",
+    "date": "2025-01-03",
+    "rating": 5,
+    "text": "ローストビーフ丼のタレが他とは違ってて凄く美味しかった！\nワインのMENU表が赤と白で分かれてて、白から選んだのにロゼですって出されてえ？！ってなった。ロゼって白の仲間なの？だとしてもこちらはロゼですってひと言添えてほしかったな。全然詳しくないので。\n\n(Translated by Google)\nThe sauce for the roast beef bowl was different from the others and was really delicious! \nThe wine menu was divided into red and white, and even though I chose a white, they brought me a rosé, which made me go, \"What?!\" Is rosé a type of white wine? Even so, I wish they'd said something about it being rosé. I'm not an expert on wine at all.",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、また星5つの高評価をいただき、誠にありがとうございます！ローストビーフ丼のタレをお気に召していただけたとのこと、大変嬉しく思っております。\n\n一方で、ワインの提供時のご案内が不足しており、戸惑わせてしまったことをお詫び申し上げます。いただいたご意見を参考に、より丁寧なご案内ができるようスタッフ一同努めてまいります。\n\nこれからも、美味しいお料理と心地よい時間をお楽しみいただけるよう努力してまいります。ぜひまたお越しいただき、ワインやお料理をお楽しみいただければ幸いです。心よりお待ちしております！",
+    "replyDate": "2025-01-05"
+  },
+  {
+    "id": "AbFvOqlJF5dnrT5EZi0UqGYnoDHdhl_0joUGTOkUwiTy3587Oz3wBM84WMKuzPPxj7kwDt0fJUNn",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "団上康生",
+    "initial": "団",
+    "date": "2024-12-28",
+    "rating": 3,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、誠にありがとうございます。また、星3つの評価をいただきましたこと、重ねて感謝申し上げます。\n\nいただいた評価を真摯に受け止め、より良いお食事やサービスをご提供できるようスタッフ一同努力してまいります。ぜひまたのご来店を心よりお待ちしております！",
+    "replyDate": "2025-01-05"
+  },
+  {
+    "id": "AbFvOqlUkcf3TGMjHOIop2gs6s7uR6jim7Yy-r4XkSTp7G9mRIOcfmy_AQwVNcHVPjlSX7PT62ALzQ",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "西川聖子",
+    "initial": "西",
+    "date": "2024-12-07",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、また星4つの評価をいただき誠にありがとうございます！\n店内の雰囲気を楽しんでいただけたようで、大変嬉しく思います。\n\n一方で、お食事やサービスについていただいた評価を真摯に受け止め、さらなる改善に努めてまいります。\n次回はよりご満足いただけるよう、スタッフ一同努力してまいりますので、またのご来店を心よりお待ちしております！",
+    "replyDate": "2024-12-11"
+  },
+  {
+    "id": "AbFvOqnzImxdpn1uhmr5ezVSNjJVIxRSTsytkzbOPfKTr_3EBpBBCMqpV9WtvUFI4FiBRcMADdyJMA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "Risa",
+    "initial": "R",
+    "date": "2024-10-31",
+    "rating": 3,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、また評価をお寄せいただきまして誠にありがとうございます。\nお食事やサービスについてご満足いただけなかった点があり、申し訳ございませんでした。いただいたご意見を真摯に受け止め、サービスやお料理の改善に努めてまいります。\n\nまた機会がございましたら、ぜひ足をお運びいただき、さらにご満足いただけるようスタッフ一同精進してまいります。\n貴重なご意見をいただきありがとうございました。",
+    "replyDate": "2024-11-04"
+  },
+  {
+    "id": "AbFvOqlakSLlwK6oJAFEF_CVJP77-xR31kPnrUgMWicJe04GiXCU3q_-sTI5bDAKhX34UkAiGXLmMQ",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "sho",
+    "initial": "s",
+    "date": "2024-10-30",
+    "rating": 5,
+    "text": "平日の20時頃に訪問。\n\n窓側のテーブル席は空いており、メインホールのテーブル席は満席。カウンターは2組の先客が。\n笑顔の素敵な女性店員さんに予約なしの2名であることを伝えると、お好きなお席へどうぞ、とのこと。1番奥のカウンターの席へ。\n\nワインが3種類選べるものと軽くつまめる物を注文し、ツレと仕事の話を。話の核心に迫る頃、後ろの席の若い女性客2組が盛り上がり出し、こちらの話が聞こえにくくなる。誕生日のお祝いか何かで盛り上がっているだけなので、不快感はないが、なんだかなーと思っていると、若めのシェフの方がお席移りますかと声をかけてきてくれた。一瞬悩んだが自分たちで選んだ席だし、変に騒いでいるわけではないので、感謝だけ伝えて丁寧にお断りする。料理する人がこういう些細な気遣いをしてくれるのはありがたい。ドリンクカウンターが遠いからか、その後も定期的にこちらをチラチラと確認してくれてオーダーを聞いてくれたり、ワインを一緒に選んでくれたりと料理を作っていない時はなんでもしてくれる。\n\n忙しそうにしているタイミングに話しかけにくいのは難点だが、学生らしき女性店員さんも常にニコニコ話してくれるし、寡黙そうなシェフの方もさりげない気遣いをしてくれる。会計は若干高めだが、このご時世に無理に安く済ませようというのもお門違い。ワインも料理も美味しいので、次は早めの時間に訪問したいと思う。\n\n(Translated by Google)\nWe visited around 8 p.m. on a weekday.\n\nThe table by the window was empty, but the tables in the main hall were full. There were two other groups sitting at the counter.\n\nWe informed the lovely, smiling waitress that we were just two people without a reservation, and she said we could sit wherever we liked. We took a seat at the counter at the very back.\n\nWe ordered a selection of three wines and some light snacks, and chatted about work with my friend. Just as we were getting to the heart of the matter, two groups of young women sitting behind us started getting excited, making it difficult to hear what we were saying. They were just celebrating a birthday or something, so it wasn't unpleasant, but I was wondering what was going on when the young chef asked us if we wanted to move. I hesitated for a moment, but since we had chosen our seats ourselves and we weren't making any noise, we politely declined, thanking him. It's nice to see a chef show such small consideration. Perhaps because the drink counter is far away, the staff periodically glance over at us to take our order, help us choose wine, and do whatever they can when they're not cooking. \n\nIt can be difficult to strike up a conversation when they seem busy, but the female waitress, who appears to be a student, is always smiling and chatting, and the taciturn chef is also subtly considerate. The bill is a little on the high side, but in these times it would be a mistake to try and save money. The wine and food were both delicious, so I'd like to visit earlier next time.",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、また素敵な口コミと高評価をいただき誠にありがとうございます！\nワインやお料理をお楽しみいただき、またスタッフの気遣いや笑顔についてもお褒めいただき、大変嬉しく思っております。\n\nお客様がリラックスしてお過ごしいただけるよう、さりげない配慮を大切にしておりますので、その点をご評価いただけたことは、スタッフにとって大きな励みです。\n次回はぜひ早めの時間にお越しいただき、さらにゆったりとした雰囲気の中で、ワインやアテをお楽しみいただければ幸いです。\n\nまたのご来店を心よりお待ちしております！",
+    "replyDate": "2024-11-04"
+  },
+  {
+    "id": "AbFvOqlPRGPDfSpWvCX0yg5XcEWRY2MZVICm8pFtlbqC_vcF5sHpwKEkJWhNdmqWQZ2rQO_28U4uHg",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "鈴木",
+    "initial": "鈴",
+    "date": "2024-10-14",
+    "rating": 3,
+    "text": "二次会利用。値段はなかなかの認識はあったが、それでも高いかなと。少しのお酒をゆっくり楽しむお店。\n個人的見解だと、正直値段ほどの価値はない。何がも言われるとわからないが、雰囲気が微妙な店内。気が利かない店員。見た目だけの、高くて少ない味は普通の料理。\n良いところをあげるのが難しい、珍しいお店。ただのチェーン店そのもの。\n\n(Translated by Google)\nUsed for a second round of drinks. While I was aware of the price, I still felt it was a bit expensive. It's a place to slowly enjoy a small amount of alcohol.\n\nIn my personal opinion, it's honestly not worth the price. I don't know what people mean, but the atmosphere inside was a bit strange. The staff were unattentive. The food looked good, but the portions were small and the taste was just average.\n\nIt's a rare kind of place where it's difficult to find anything good. It's just a typical chain restaurant.",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』をご利用いただき、貴重なご意見をお寄せいただき、ありがとうございます。スタッフの対応や店内の雰囲気、お料理についてご満足いただけなかった点を真摯に受け止め、今後の改善に努めてまいります。\n\nより良い体験をお届けできるよう、引き続き努力してまいりますので、またの機会がございましたら、ぜひお越しください。",
+    "replyDate": "2024-10-15"
+  },
+  {
+    "id": "AbFvOqkFAzEZJzHetlfsLMs0DeFA4RSAKnsVxDPvkARCndcvbvUWIo3MrzyZlU0ff-ytTHSShKw_Gw",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "yo KAS",
+    "initial": "y",
+    "date": "2024-09-21",
+    "rating": 4,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』をご利用いただき、星4つの評価をありがとうございます。\nサービスにご満足いただけたとの評価をいただき、大変嬉しく思います。店内の雰囲気も楽しんでいただけたようで、スタッフ一同励みになります。\n\nお料理についても、さらにご満足いただけるように努めてまいりますので、またのご来店を心よりお待ちしております。貴重なご意見、ありがとうございました！",
+    "replyDate": "2024-09-30"
+  },
+  {
+    "id": "AbFvOqncWc7WyLvypnuCSccyYwZ1YrELCJM4Y-20RpPppLWZpyWv-RljU8PCz2AzVl-pccCf21LhwQ",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "k",
+    "initial": "k",
+    "date": "2024-09-11",
+    "rating": 5,
+    "text": "（本文なし）",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』にご来店いただき、そして星5つの評価をありがとうございます！\n\nお楽しみいただけたこと、スタッフ一同とても嬉しく思っております。\nこれからも、より一層ご満足いただけるお料理とサービスを提供できるよう努めてまいります。\n\nまたのご来店を心よりお待ちしております！",
+    "replyDate": "2024-10-01"
+  },
+  {
+    "id": "AbFvOqm74EYWJA5FXp5xUju8z-qfz9e3libuvD6ObH_UJLLhs_nJq-Kc3dHFMNpAZvHUddjNyj7LzA",
+    "storeId": 1,
+    "storeName": "葡萄日和 ヨイノクチ",
+    "reviewer": "城大蔵",
+    "initial": "城",
+    "date": "2024-09-07",
+    "rating": 4,
+    "text": "札幌駅近くにあるワインバー。北海道産のワインが目的に訪問。\n\nツマミの付いたセットがお得です。\n\n(Translated by Google)\nA wine bar near Sapporo Station. I visited to try Hokkaido wines.\n\nThe set menu with appetizers is a great value.",
+    "replied": true,
+    "replyText": "この度は『ヨイノクチ』をご利用いただき、また星4つの評価をありがとうございます！\n北海道産ワインをお楽しみいただけたとのこと、スタッフ一同とても嬉しく思います。お得なセットやワインに合うおつまみもご満足いただけたようで何よりです。\n\nこれからも、より一層お客様にご満足いただけるサービスとお料理を提供できるよう努めてまいります。\n札幌駅近くにお越しの際は、またぜひお立ち寄りください。スタッフ一同、心よりお待ちしております！",
+    "replyDate": "2024-09-10"
+  }
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentMonth = '2026-04';
+let currentStore  = 'all';
+let reviewFilter  = 'all';
+const charts = {};
+
+/* ============================================================
+   SECURITY HELPERS
+   ============================================================ */
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function makeEl(tag, attrs, children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === 'className') el.className = v;
+    else if (k === 'style') el.style.cssText = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v);
+  }
+  for (const child of (children || [])) {
+    if (typeof child === 'string') el.insertAdjacentText('beforeend', child);
+    else if (child) el.appendChild(child);
+  }
+  return el;
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function storeData(id, month) { return MONTHLY_DATA[id]?.[month] ?? {}; }
+function prevMonth(m)  { const i = MONTHS.indexOf(m); return i > 0 ? MONTHS[i-1] : null; }
+function activeIds()   {
+  return currentStore === 'all' ? STORES.map(s => s.id) : [parseInt(currentStore)];
+}
+function sumField(month, field, ids) {
+  return ids.reduce((acc, id) => acc + (storeData(id, month)[field] ?? 0), 0);
+}
+function avgField(month, field, ids) {
+  const vals = ids.map(id => storeData(id, month)[field] ?? 0).filter(v => v > 0);
+  return vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : 0;
+}
+function fmt(n) { return Math.round(n).toLocaleString('ja-JP'); }
+function fmtMonth(m) { const [y, mo] = m.split('-'); return y + '年' + parseInt(mo) + '月'; }
+function ratingColor(r) {
+  if (r >= 4.5) return '#10b981';
+  if (r >= 4.0) return '#2563eb';
+  if (r >= 3.5) return '#f59e0b';
+  return '#ef4444';
+}
+
+/* ============================================================
+   DOM BUILDERS (XSS-safe — always use esc() for data strings)
+   ============================================================ */
+function buildTrendEl(cur, prev) {
+  const el = document.createElement('span');
+  if (prev == null || prev === 0) return el;
+  const pct = (cur - prev) / prev * 100;
+  if (Math.abs(pct) < 0.05) { el.className = 'trend-flat'; el.textContent = '→ 変化なし'; return el; }
+  const up = pct > 0;
+  el.className = up ? 'trend-up' : 'trend-down';
+  el.textContent = (up ? '↑ ' : '↓ ') + Math.abs(pct).toFixed(1) + '% 前月比';
+  return el;
+}
+
+function buildStarsEl(rating) {
+  const wrap = document.createElement('span');
+  const full = Math.floor(rating);
+  for (let i = 0; i < 5; i++) {
+    const s = document.createElement('span');
+    s.className = i < full ? 'star-filled' : 'star-empty';
+    s.textContent = '★';
+    wrap.appendChild(s);
+  }
+  const num = document.createElement('span');
+  num.className = 'rating-num';
+  num.textContent = rating.toFixed(1);
+  wrap.appendChild(num);
+  return wrap;
+}
+
+function buildStarsText(rating) {
+  return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init() {
+  const storeSel = document.getElementById('storeSelector');
+  STORES.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.name;
+    storeSel.appendChild(o);
+  });
+
+  const monthSel = document.getElementById('monthSelector');
+  MONTHS.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m;
+    o.textContent = fmtMonth(m);
+    monthSel.appendChild(o);
+  });
+  // 初期表示は「直近の完了月」（当月は集計途中のため前月を選ぶ。月が2つ以上ある前提）
+  monthSel.value = MONTHS.length >= 2 ? MONTHS[MONTHS.length - 2] : MONTHS[MONTHS.length - 1];
+
+  const revSel = document.getElementById('reviewStoreSelect');
+  STORES.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.name;
+    revSel.appendChild(o);
+  });
+
+  const postGrid = document.getElementById('post-store-grid');
+  STORES.forEach(s => {
+    const label = document.createElement('label');
+    label.className = 'store-check-label';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = s.id;
+    const sp = document.createElement('span');
+    sp.textContent = s.name;
+    label.appendChild(cb); label.appendChild(sp);
+    postGrid.appendChild(label);
+  });
+
+  updateUnrepliedBadge();
+  updateDashboard();
+  renderReviews();
+}
+
+function updateUnrepliedBadge() {
+  const cnt = REVIEWS.filter(r => !r.replied).length;
+  const badge = document.getElementById('unreplied-badge');
+  badge.textContent = cnt;
+  badge.style.display = cnt > 0 ? 'inline-flex' : 'none';
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function updateDashboard() {
+  currentMonth = document.getElementById('monthSelector').value;
+  currentStore  = document.getElementById('storeSelector').value;
+  const ids  = activeIds();
+  const prev = prevMonth(currentMonth);
+
+  const labelName = currentStore === 'all' ? '全店舗合計'
+    : (STORES.find(s => s.id === parseInt(currentStore))?.name ?? '');
+  document.getElementById('summary-label').textContent =
+    '月次サマリー — ' + labelName + '（' + fmtMonth(currentMonth) + '）';
+
+  function setKPI(key, field, isAvg, unit) {
+    const cur = isAvg ? avgField(currentMonth, field, ids) : sumField(currentMonth, field, ids);
+    const prv = prev  ? (isAvg ? avgField(prev, field, ids) : sumField(prev, field, ids)) : null;
+    const valEl = document.getElementById('kv-' + key);
+    const trendEl = document.getElementById('kt-' + key);
+    if (key === 'rating') {
+      valEl.textContent = '';
+      valEl.appendChild(buildStarsEl(cur));
+    } else {
+      valEl.textContent = fmt(cur) + (unit || '');
+    }
+    trendEl.textContent = '';
+    trendEl.appendChild(buildTrendEl(cur, prv));
+  }
+
+  setKPI('views',    'views',      false);
+  setKPI('searches', 'searches',   false);
+  setKPI('routes',   'routes',     false);
+  setKPI('calls',    'calls',      false);
+  setKPI('rating',   'rating',     true);
+  setKPI('reviews',  'newReviews', false, '件');
+
+  renderTable(ids);
+  renderCharts(ids);
+  document.getElementById('table-meta').textContent =
+    ids.length + '店舗 / 対象月: ' + fmtMonth(currentMonth);
+}
+
+function renderTable(ids) {
+  const prev = prevMonth(currentMonth);
+  const tbody = document.getElementById('store-tbody');
+  tbody.textContent = '';
+
+  STORES.filter(s => ids.includes(s.id)).forEach(store => {
+    const d = storeData(store.id, currentMonth);
+    const p = prev ? storeData(store.id, prev) : null;
+    const pct = (p && p.views) ? ((d.views - p.views) / p.views * 100) : null;
+
+    const tr = document.createElement('tr');
+
+    // 店舗名
+    const tdName = document.createElement('td');
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'store-name'; nameDiv.textContent = store.name;
+    const brandDiv = document.createElement('div');
+    brandDiv.className = 'store-brand'; brandDiv.textContent = store.brand;
+    tdName.appendChild(nameDiv); tdName.appendChild(brandDiv);
+
+    // 表示回数
+    const tdViews = document.createElement('td');
+    tdViews.style.cssText = 'font-variant-numeric:tabular-nums;font-weight:600';
+    tdViews.textContent = fmt(d.views || 0);
+
+    // 前月比
+    const tdPct = document.createElement('td');
+    if (pct !== null) {
+      const sp = document.createElement('span');
+      sp.style.cssText = 'font-weight:700;color:' + (pct >= 0 ? '#10b981' : '#ef4444');
+      sp.textContent = (pct >= 0 ? '↑' : '↓') + Math.abs(pct).toFixed(1) + '%';
+      tdPct.appendChild(sp);
+    } else {
+      tdPct.textContent = '—';
+    }
+
+    // 平均評価
+    const tdRating = document.createElement('td');
+    tdRating.appendChild(buildStarsEl(d.rating || 0));
+
+    // 口コミ
+    const tdReviews = document.createElement('td');
+    tdReviews.textContent = (d.newReviews || 0) + '件';
+
+    // 最終投稿日
+    const tdPost = document.createElement('td');
+    tdPost.style.color = '#64748b';
+    tdPost.textContent = d.lastPost || '—';
+
+    // 投稿回数
+    const tdPosts = document.createElement('td');
+    tdPosts.textContent = (d.posts || 0) + '回';
+
+    // 未返信
+    const tdUnreplied = document.createElement('td');
+    if (d.unreplied > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'badge-red'; badge.textContent = d.unreplied;
+      tdUnreplied.appendChild(badge);
+    } else {
+      const z = document.createElement('span');
+      z.className = 'badge-zero'; z.textContent = '—';
+      tdUnreplied.appendChild(z);
+    }
+
+    [tdName, tdViews, tdPct, tdRating, tdReviews, tdPost, tdPosts, tdUnreplied].forEach(td => tr.appendChild(td));
+    tbody.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   CHARTS
+   ============================================================ */
+function renderCharts(ids) {
+  const baseOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid:{ display:false }, ticks:{ font:{size:11}, color:'#94a3b8' } },
+      y: { grid:{ color:'#f1f5f9' }, ticks:{ font:{size:11}, color:'#94a3b8' } },
+    }
+  };
+
+  if (charts.views) charts.views.destroy();
+  charts.views = new Chart(document.getElementById('viewsChart'), {
+    type: 'line',
+    data: {
+      labels: MONTH_LABELS,
+      datasets: [{
+        data: MONTHS.map(m => sumField(m, 'views', ids)),
+        borderColor: '#2563eb', borderWidth: 2.5,
+        backgroundColor: 'rgba(37,99,235,0.07)',
+        pointBackgroundColor: '#2563eb', pointRadius: 4, pointHoverRadius: 6,
+        fill: true, tension: 0.35,
+      }],
+    },
+    options: baseOpts,
+  });
+
+  if (charts.actions) charts.actions.destroy();
+  charts.actions = new Chart(document.getElementById('actionsChart'), {
+    type: 'line',
+    data: {
+      labels: MONTH_LABELS,
+      datasets: [
+        {
+          label: 'ルート検索',
+          data: MONTHS.map(m => sumField(m, 'routes', ids)),
+          borderColor: '#10b981', borderWidth: 2.5,
+          backgroundColor: 'rgba(16,185,129,0.07)',
+          pointBackgroundColor: '#10b981', pointRadius: 4, pointHoverRadius: 6,
+          fill: true, tension: 0.35,
+        },
+        {
+          label: '電話タップ',
+          data: MONTHS.map(m => sumField(m, 'calls', ids)),
+          borderColor: '#f59e0b', borderWidth: 2.5,
+          backgroundColor: 'rgba(245,158,11,0.07)',
+          pointBackgroundColor: '#f59e0b', pointRadius: 4, pointHoverRadius: 6,
+          fill: true, tension: 0.35,
+        },
+      ],
+    },
+    options: {
+      ...baseOpts,
+      plugins: { legend: { display:true, position:'top', labels:{ font:{size:11}, boxWidth:10, padding:12, color:'#475569' } } },
+    },
+  });
+
+  const ratingStores = STORES.filter(s => ids.includes(s.id));
+  const ratingVals   = ratingStores.map(s => storeData(s.id, currentMonth).rating || 0);
+  if (charts.ratings) charts.ratings.destroy();
+  charts.ratings = new Chart(document.getElementById('ratingsChart'), {
+    type: 'bar',
+    data: {
+      labels: ratingStores.map(s => s.name.length > 12 ? s.name.slice(0,12)+'…' : s.name),
+      datasets: [{
+        data: ratingVals,
+        backgroundColor: ratingVals.map(r => ratingColor(r) + 'cc'),
+        borderColor:      ratingVals.map(r => ratingColor(r)),
+        borderWidth: 1.5, borderRadius: 5,
+      }],
+    },
+    options: {
+      ...baseOpts,
+      scales: {
+        x: { grid:{display:false}, ticks:{ font:{size:9}, color:'#94a3b8', maxRotation:45 } },
+        y: { min:3.0, max:5.0, grid:{color:'#f1f5f9'}, ticks:{ font:{size:11}, color:'#94a3b8' } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => '評価: ' + ctx.parsed.y.toFixed(1) } },
+      },
+    },
+  });
+}
+
+/* ============================================================
+   REVIEWS
+   ============================================================ */
+function setReviewFilter(f, btn) {
+  reviewFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderReviews();
+}
+
+function renderReviews() {
+  const storeVal = document.getElementById('reviewStoreSelect').value;
+  let list = [...REVIEWS];
+  if (storeVal !== 'all') list = list.filter(r => r.storeId === parseInt(storeVal));
+  if (reviewFilter === 'unreplied') list = list.filter(r => !r.replied);
+  if (reviewFilter === 'high')      list = list.filter(r => r.rating >= 4);
+  if (reviewFilter === 'low')       list = list.filter(r => r.rating <= 3);
+
+  const container = document.getElementById('reviews-list');
+  container.textContent = '';
+
+  if (!list.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = '該当する口コミはありません';
+    container.appendChild(empty);
+    return;
+  }
+
+  const storeNameOf = id => STORES.find(s => s.id === id)?.name ?? '';
+
+  list.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'review-card';
+
+    // Top row
+    const top = document.createElement('div');
+    top.className = 'review-top';
+
+    // Reviewer info
+    const rev = document.createElement('div');
+    rev.className = 'reviewer';
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.textContent = r.initial;
+    const info = document.createElement('div');
+    const nameEl = document.createElement('div');
+    nameEl.className = 'reviewer-name';
+    nameEl.textContent = r.reviewer;
+    const meta = document.createElement('div');
+    meta.className = 'reviewer-meta';
+    const stars = document.createElement('span');
+    stars.style.color = '#f59e0b';
+    stars.textContent = buildStarsText(r.rating);
+    const sep = document.createTextNode(' ' + r.date);
+    const tag = document.createElement('span');
+    tag.className = 'store-tag';
+    tag.textContent = storeNameOf(r.storeId);
+    meta.appendChild(stars); meta.appendChild(sep); meta.appendChild(tag);
+    info.appendChild(nameEl); info.appendChild(meta);
+    rev.appendChild(av); rev.appendChild(info);
+
+    // Status pill
+    const pill = document.createElement('span');
+    pill.className = 'reply-pill ' + (r.replied ? 'replied' : 'unreplied');
+    pill.textContent = r.replied ? '✓ 返信済み' : '● 未返信';
+
+    top.appendChild(rev); top.appendChild(pill);
+
+    // Review body
+    const body = document.createElement('div');
+    body.className = 'review-body';
+    body.textContent = r.text;
+
+    card.appendChild(top); card.appendChild(body);
+
+    if (r.replied) {
+      const replyBox = document.createElement('div');
+      replyBox.className = 'reply-box';
+      const lbl = document.createElement('div');
+      lbl.className = 'reply-box-label';
+      lbl.textContent = 'オーナーの返信（' + r.replyDate + '）';
+      const rt = document.createElement('div');
+      rt.textContent = r.replyText;
+      replyBox.appendChild(lbl); replyBox.appendChild(rt);
+      card.appendChild(replyBox);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'btn-row';
+      const replyBtn = document.createElement('button');
+      replyBtn.className = 'btn btn-primary';
+      replyBtn.textContent = '返信する';
+      replyBtn.addEventListener('click', () => {
+        alert('【フェーズ2実装予定】GBP APIと連携して口コミに返信します。\n口コミID: ' + r.id);
+      });
+      const laterBtn = document.createElement('button');
+      laterBtn.className = 'btn btn-ghost';
+      laterBtn.textContent = '後で対応';
+      row.appendChild(replyBtn); row.appendChild(laterBtn);
+      card.appendChild(row);
+    }
+
+    container.appendChild(card);
+  });
+}
+
+/* ============================================================
+   POSTS
+   ============================================================ */
+function selectAllStores(val) {
+  document.querySelectorAll('#post-store-grid input[type="checkbox"]').forEach(cb => { cb.checked = val; });
+}
+function updateCharCount() {
+  const n = document.getElementById('postText').value.length;
+  document.getElementById('charCount').textContent = n + ' / 1500文字';
+}
+function handlePost() {
+  const checked = [...document.querySelectorAll('#post-store-grid input:checked')];
+  if (!checked.length) { alert('投稿先店舗を1つ以上選択してください'); return; }
+  const text = document.getElementById('postText').value.trim();
+  if (!text) { alert('投稿内容を入力してください'); return; }
+  const names = checked.map(cb => cb.closest('label').querySelector('span').textContent);
+  alert('【フェーズ2実装予定】GBP APIと連携します\n\n投稿先（' + checked.length + '店舗）:\n' + names.join('\n') + '\n\n内容:\n' + text);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
