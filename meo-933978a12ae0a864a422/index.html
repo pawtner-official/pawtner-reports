@@ -416,9 +416,9 @@ tbody tr:hover td { background: #f8fafc; }
             <th>表示回数</th>
             <th>前月比</th>
             <th>平均評価</th>
-            <th>今月の口コミ</th>
-            <th>最終投稿日</th>
-            <th>今月の投稿</th>
+            <th>口コミ数</th>
+            <th>当月の口コミ</th>
+            <th>予約（Google経由）</th>
             <th>未返信口コミ</th>
           </tr>
         </thead>
@@ -479,73 +479,97 @@ const STORES = [
     "id": 1,
     "name": "葡萄日和 ヨイノクチ",
     "brand": "葡萄日和",
-    "placeId": "ChIJZY0c72MpC18REiPH8fR1ohQ"
+    "placeId": "ChIJZY0c72MpC18REiPH8fR1ohQ",
+    "rating": 3.9,
+    "reviewCount": 172
   },
   {
     "id": 2,
     "name": "博多うまかもん ぶあいそ 南3条店",
     "brand": "博多うまかもん",
-    "placeId": "ChIJI1nYh4MpC18RpaMjM3E82iM"
+    "placeId": "ChIJI1nYh4MpC18RpaMjM3E82iM",
+    "rating": 4.0,
+    "reviewCount": 331
   },
   {
     "id": 3,
     "name": "台湾夜市 カシンフウ",
     "brand": "台湾夜市",
-    "placeId": "ChIJ5TcgeoQpC18Rb1t4v2fpSW8"
+    "placeId": "ChIJ5TcgeoQpC18Rb1t4v2fpSW8",
+    "rating": 3.4,
+    "reviewCount": 189
   },
   {
     "id": 4,
     "name": "丸海屋 日本生命札幌ビル店",
     "brand": "丸海屋",
-    "placeId": "ChIJRaFsE-8pC18RDsZUSgydTVI"
+    "placeId": "ChIJRaFsE-8pC18RDsZUSgydTVI",
+    "rating": 3.4,
+    "reviewCount": 116
   },
   {
     "id": 5,
     "name": "スペイン バル トーティラ フラット 札幌駅北口店",
     "brand": "スペイン",
-    "placeId": "ChIJadD7ol4pC18RYm7VbckNmNY"
+    "placeId": "ChIJadD7ol4pC18RYm7VbckNmNY",
+    "rating": 3.6,
+    "reviewCount": 39
   },
   {
     "id": 6,
     "name": "酒肴日和 アテニヨル 日本生命札幌ビル店",
     "brand": "酒肴日和",
-    "placeId": "ChIJN9S9ygopC18RF5mcvHhzy24"
+    "placeId": "ChIJN9S9ygopC18RF5mcvHhzy24",
+    "rating": 3.8,
+    "reviewCount": 428
   },
   {
     "id": 7,
     "name": "酒肴日和 アテニヨル 清明北一西三",
     "brand": "酒肴日和",
-    "placeId": "ChIJcTJGMrYpC18R2OS8Ske0AgY"
+    "placeId": "ChIJcTJGMrYpC18R2OS8Ske0AgY",
+    "rating": 4.0,
+    "reviewCount": 208
   },
   {
     "id": 8,
     "name": "北海道食市場 丸海屋 南3条店",
     "brand": "北海道食市場",
-    "placeId": "ChIJg5tpqKUpC18RlXjjQeI0JT0"
+    "placeId": "ChIJg5tpqKUpC18RlXjjQeI0JT0",
+    "rating": 4.1,
+    "reviewCount": 15
   },
   {
     "id": 9,
     "name": "博多ぶあいそ 札幌別邸",
     "brand": "博多ぶあいそ",
-    "placeId": "ChIJIT_IUQopC18R67FShm2DwDM"
+    "placeId": "ChIJIT_IUQopC18R67FShm2DwDM",
+    "rating": 4.1,
+    "reviewCount": 605
   },
   {
     "id": 10,
     "name": "北海道食市場 丸海屋離",
     "brand": "北海道食市場",
-    "placeId": "ChIJW1IJBXYpC18RK4wmxdmndTI"
+    "placeId": "ChIJW1IJBXYpC18RK4wmxdmndTI",
+    "rating": 3.4,
+    "reviewCount": 364
   },
   {
     "id": 11,
     "name": "ワイン×肉 炭焼きバル倉庫",
     "brand": "ワイン×肉",
-    "placeId": "ChIJ5TcgeoQpC18RGD4eGHCDPS4"
+    "placeId": "ChIJ5TcgeoQpC18RGD4eGHCDPS4",
+    "rating": 3.9,
+    "reviewCount": 140
   },
   {
     "id": 12,
     "name": "酒菜日和 ナマラヨシ",
     "brand": "酒菜日和",
-    "placeId": "ChIJz6maA7ApC18RYfLGUZR0t4Q"
+    "placeId": "ChIJz6maA7ApC18RYfLGUZR0t4Q",
+    "rating": 3.9,
+    "reviewCount": 224
   }
 ];
 
@@ -564,10 +588,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 372,
       "calls": 58,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 4,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 27,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -577,10 +601,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 348,
       "calls": 40,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 27,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -590,10 +614,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 324,
       "calls": 35,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 27,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -603,10 +627,10 @@ const MONTHLY_DATA = {
       "bookings": 9,
       "menuClicks": 340,
       "calls": 59,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 27,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -616,10 +640,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 256,
       "calls": 38,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 27,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -629,10 +653,10 @@ const MONTHLY_DATA = {
       "bookings": 1,
       "menuClicks": 96,
       "calls": 20,
-      "rating": 4.0,
+      "rating": 3.9,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 27,
       "lastPost": "2026-08-19"
     }
   },
@@ -647,7 +671,7 @@ const MONTHLY_DATA = {
       "rating": 4.0,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 18,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -660,7 +684,7 @@ const MONTHLY_DATA = {
       "rating": 4.0,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 18,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -673,7 +697,7 @@ const MONTHLY_DATA = {
       "rating": 4.0,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 18,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -686,7 +710,7 @@ const MONTHLY_DATA = {
       "rating": 4.0,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 18,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -697,9 +721,9 @@ const MONTHLY_DATA = {
       "menuClicks": 118,
       "calls": 45,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 36,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 18,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -710,9 +734,9 @@ const MONTHLY_DATA = {
       "menuClicks": 57,
       "calls": 20,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 14,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 18,
       "lastPost": "2026-08-19"
     }
   },
@@ -724,10 +748,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 177,
       "calls": 72,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 33,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -737,10 +761,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 205,
       "calls": 54,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 33,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -750,10 +774,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 159,
       "calls": 36,
-      "rating": 4.0,
+      "rating": 3.4,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 33,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -763,10 +787,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 185,
       "calls": 71,
-      "rating": 4.0,
+      "rating": 3.4,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 33,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -776,10 +800,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 156,
       "calls": 43,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 4,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 33,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -789,10 +813,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 75,
       "calls": 18,
-      "rating": 4.0,
+      "rating": 3.4,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 33,
       "lastPost": "2026-08-19"
     }
   },
@@ -804,10 +828,10 @@ const MONTHLY_DATA = {
       "bookings": 2,
       "menuClicks": 585,
       "calls": 76,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 29,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -817,10 +841,10 @@ const MONTHLY_DATA = {
       "bookings": 1,
       "menuClicks": 521,
       "calls": 86,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 29,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -830,10 +854,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 597,
       "calls": 62,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 4,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 29,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -843,10 +867,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 588,
       "calls": 57,
-      "rating": 4.0,
+      "rating": 3.4,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 29,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -856,10 +880,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 637,
       "calls": 79,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 6,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 29,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -869,10 +893,10 @@ const MONTHLY_DATA = {
       "bookings": 4,
       "menuClicks": 253,
       "calls": 28,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 6,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 29,
       "lastPost": "2026-08-19"
     }
   },
@@ -884,10 +908,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 42,
       "calls": 30,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.6,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 36,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -897,10 +921,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 28,
       "calls": 15,
-      "rating": 4.0,
+      "rating": 3.6,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 36,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -910,10 +934,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 40,
       "calls": 13,
-      "rating": 4.0,
+      "rating": 3.6,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 36,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -923,10 +947,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 63,
       "calls": 10,
-      "rating": 4.0,
+      "rating": 3.6,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 36,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -936,10 +960,10 @@ const MONTHLY_DATA = {
       "bookings": 2,
       "menuClicks": 166,
       "calls": 10,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.6,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 36,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -949,10 +973,10 @@ const MONTHLY_DATA = {
       "bookings": 1,
       "menuClicks": 64,
       "calls": 14,
-      "rating": 4.0,
+      "rating": 3.6,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 36,
       "lastPost": "2026-08-19"
     }
   },
@@ -964,10 +988,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 380,
       "calls": 43,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.8,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 24,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -977,10 +1001,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 330,
       "calls": 37,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.8,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 24,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -990,10 +1014,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 348,
       "calls": 31,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.8,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 24,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -1003,10 +1027,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 321,
       "calls": 25,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.8,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 24,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -1016,10 +1040,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 324,
       "calls": 51,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.8,
+      "newReviews": 5,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 24,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -1029,10 +1053,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 161,
       "calls": 26,
-      "rating": 4.0,
+      "rating": 3.8,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 24,
       "lastPost": "2026-08-19"
     }
   },
@@ -1045,9 +1069,9 @@ const MONTHLY_DATA = {
       "menuClicks": 155,
       "calls": 31,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -1058,9 +1082,9 @@ const MONTHLY_DATA = {
       "menuClicks": 171,
       "calls": 48,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 3,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -1071,9 +1095,9 @@ const MONTHLY_DATA = {
       "menuClicks": 146,
       "calls": 33,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -1084,9 +1108,9 @@ const MONTHLY_DATA = {
       "menuClicks": 178,
       "calls": 39,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -1097,9 +1121,9 @@ const MONTHLY_DATA = {
       "menuClicks": 213,
       "calls": 34,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -1110,9 +1134,9 @@ const MONTHLY_DATA = {
       "menuClicks": 78,
       "calls": 20,
       "rating": 4.0,
-      "newReviews": 0,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     }
   },
@@ -1124,7 +1148,7 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 0,
       "calls": 0,
-      "rating": 4.0,
+      "rating": 4.1,
       "newReviews": 0,
       "posts": 0,
       "unreplied": 0,
@@ -1137,7 +1161,7 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 0,
       "calls": 0,
-      "rating": 4.0,
+      "rating": 4.1,
       "newReviews": 0,
       "posts": 0,
       "unreplied": 0,
@@ -1150,7 +1174,7 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 0,
       "calls": 0,
-      "rating": 4.0,
+      "rating": 4.1,
       "newReviews": 0,
       "posts": 0,
       "unreplied": 0,
@@ -1163,8 +1187,8 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 0,
       "calls": 3,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 1,
       "posts": 0,
       "unreplied": 0,
       "lastPost": "2026-08-19"
@@ -1176,8 +1200,8 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 5,
       "calls": 16,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 6,
       "posts": 0,
       "unreplied": 0,
       "lastPost": "2026-08-19"
@@ -1189,8 +1213,8 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 5,
       "calls": 5,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 8,
       "posts": 0,
       "unreplied": 0,
       "lastPost": "2026-08-19"
@@ -1204,10 +1228,10 @@ const MONTHLY_DATA = {
       "bookings": 27,
       "menuClicks": 1460,
       "calls": 207,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 7,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -1217,10 +1241,10 @@ const MONTHLY_DATA = {
       "bookings": 8,
       "menuClicks": 1156,
       "calls": 166,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 6,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -1230,10 +1254,10 @@ const MONTHLY_DATA = {
       "bookings": 14,
       "menuClicks": 2340,
       "calls": 201,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 3,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -1243,10 +1267,10 @@ const MONTHLY_DATA = {
       "bookings": 11,
       "menuClicks": 1503,
       "calls": 182,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 4,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -1256,10 +1280,10 @@ const MONTHLY_DATA = {
       "bookings": 15,
       "menuClicks": 1195,
       "calls": 164,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 4,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -1269,10 +1293,10 @@ const MONTHLY_DATA = {
       "bookings": 5,
       "menuClicks": 432,
       "calls": 49,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 4.1,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 50,
       "lastPost": "2026-08-19"
     }
   },
@@ -1284,10 +1308,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 305,
       "calls": 47,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 4,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 21,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -1297,10 +1321,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 272,
       "calls": 79,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 21,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -1310,10 +1334,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 313,
       "calls": 78,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 21,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -1323,10 +1347,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 349,
       "calls": 70,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 21,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -1336,10 +1360,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 337,
       "calls": 48,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 3,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 21,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -1349,10 +1373,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 137,
       "calls": 22,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.4,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 21,
       "lastPost": "2026-08-19"
     }
   },
@@ -1364,10 +1388,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 59,
       "calls": 86,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 42,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -1377,10 +1401,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 51,
       "calls": 66,
-      "rating": 4.0,
+      "rating": 3.9,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 42,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -1390,10 +1414,10 @@ const MONTHLY_DATA = {
       "bookings": 2,
       "menuClicks": 41,
       "calls": 76,
-      "rating": 4.0,
+      "rating": 3.9,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 42,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -1403,10 +1427,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 39,
       "calls": 75,
-      "rating": 4.0,
+      "rating": 3.9,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 42,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -1416,10 +1440,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 51,
       "calls": 70,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 3,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 42,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -1429,10 +1453,10 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 29,
       "calls": 18,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 42,
       "lastPost": "2026-08-19"
     }
   },
@@ -1444,10 +1468,10 @@ const MONTHLY_DATA = {
       "bookings": 2,
       "menuClicks": 322,
       "calls": 54,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 39,
       "lastPost": "2026-08-19"
     },
     "2026-04": {
@@ -1457,10 +1481,10 @@ const MONTHLY_DATA = {
       "bookings": 2,
       "menuClicks": 303,
       "calls": 41,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 1,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 39,
       "lastPost": "2026-08-19"
     },
     "2026-05": {
@@ -1470,10 +1494,10 @@ const MONTHLY_DATA = {
       "bookings": 5,
       "menuClicks": 247,
       "calls": 26,
-      "rating": 4.0,
+      "rating": 3.9,
       "newReviews": 0,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 39,
       "lastPost": "2026-08-19"
     },
     "2026-06": {
@@ -1483,10 +1507,10 @@ const MONTHLY_DATA = {
       "bookings": 4,
       "menuClicks": 209,
       "calls": 29,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 39,
       "lastPost": "2026-08-19"
     },
     "2026-07": {
@@ -1496,10 +1520,10 @@ const MONTHLY_DATA = {
       "bookings": 3,
       "menuClicks": 231,
       "calls": 49,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 3,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 39,
       "lastPost": "2026-08-19"
     },
     "2026-08": {
@@ -1509,16 +1533,42 @@ const MONTHLY_DATA = {
       "bookings": 0,
       "menuClicks": 73,
       "calls": 26,
-      "rating": 4.0,
-      "newReviews": 0,
+      "rating": 3.9,
+      "newReviews": 2,
       "posts": 0,
-      "unreplied": 0,
+      "unreplied": 39,
       "lastPost": "2026-08-19"
     }
   }
 };
 
 const REVIEWS = [
+  {
+    "id": "AbFvOqkqLuwIBTgZfO7Lj2NnWrQM0e5F-HZDnqEjdlBrryC8gjbQTqvOo-9GdcwTtF2XhoJR49nX",
+    "storeId": 2,
+    "storeName": "博多うまかもん ぶあいそ 南3条店",
+    "reviewer": "豊田尊子",
+    "initial": "豊",
+    "date": "2026-08-19",
+    "rating": 5,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
+  {
+    "id": "AbFvOqnsBSFJT5ZQzRdD9TmtRGeV9ujONE-jWS6Jp_N1AkSiOZDa3PX0A6PKjjWtaJa1y4WdBz1oLg",
+    "storeId": 2,
+    "storeName": "博多うまかもん ぶあいそ 南3条店",
+    "reviewer": "金澤美智子",
+    "initial": "金",
+    "date": "2026-08-19",
+    "rating": 5,
+    "text": "（本文なし）",
+    "replied": false,
+    "replyText": "",
+    "replyDate": ""
+  },
   {
     "id": "AbFvOqnKyDW0QbTjAFuYRH0yKjbs8HQlhp4Ht6DaWY75muq92awVG6BAUUvOfTYfflPN4l6WkcWBIw",
     "storeId": 2,
@@ -1541,19 +1591,6 @@ const REVIEWS = [
     "date": "2026-08-19",
     "rating": 5,
     "text": "（本文なし）",
-    "replied": false,
-    "replyText": "",
-    "replyDate": ""
-  },
-  {
-    "id": "AbFvOqn7Z5ZXhRmsMj2QXluUoGLNoJ3Q52Ayt1LTSZ0CJDk5p8vctfTOw2EFa2aC8PmOy8fRLOhSMw",
-    "storeId": 2,
-    "storeName": "博多うまかもん ぶあいそ 南3条店",
-    "reviewer": "富山絵里華",
-    "initial": "富",
-    "date": "2026-08-19",
-    "rating": 5,
-    "text": "もつ鍋がとにかく美味しい！\n締めのご飯が最高！\n\n(Translated by Google)\nThe motsunabe (offal hot pot) is absolutely delicious!\n\nThe rice at the end is the best!",
     "replied": false,
     "replyText": "",
     "replyDate": ""
@@ -2726,19 +2763,6 @@ const REVIEWS = [
     "text": "（本文なし）",
     "replied": true,
     "replyText": "櫻子様\nこの度は博多うまかもん ぶあいそ南3条店ににご来店いただき誠にありがとうございます。\nご評価いただき、誠にありがとうございます！お客様に満足していただけて大変嬉しいです。またすすきの周辺にお越しの際は是非、ご来店を心よりお待ちしております。",
-    "replyDate": "2026-07-23"
-  },
-  {
-    "id": "AbFvOqnPG7fkwGvmluX_2bI_7r2-X3gSkpt9k5oJkqL66vtn5YCJm_2eBLX26Xo_pUC_ILy6nbCZ",
-    "storeId": 2,
-    "storeName": "博多うまかもん ぶあいそ 南3条店",
-    "reviewer": "まあくん“ぐっち”",
-    "initial": "ま",
-    "date": "2026-07-15",
-    "rating": 5,
-    "text": "モツ鍋はこのお店が一番美味しいです！\nまた来ます！\n\n(Translated by Google)\nThis restaurant has the best motsunabe (offal hot pot)!\n\nI'll come again!",
-    "replied": true,
-    "replyText": "まあくん“ぐっち”様\n\nこの度は「博多うまかもん ぶあいそ南3条店」へご来店いただき、嬉しい口コミをありがとうございます！\n\n「モツ鍋はこのお店が一番美味しい」とのお言葉をいただき、大変嬉しく思います。自慢の博多もつ鍋をお楽しみいただけたようで、スタッフ一同大変励みになります！\n\n当店では、博多名物のもつ鍋をはじめ、九州・博多のうまかもんを豊富にご用意しております。すすきので美味しいもつ鍋や博多料理をお探しの際は、ぜひまた「博多うまかもん ぶあいそ南3条店」へお越しください！\n\nまたのご来店を心よりお待ちしております！",
     "replyDate": "2026-07-23"
   },
   {
@@ -9005,18 +9029,19 @@ function renderTable(ids) {
     const tdRating = document.createElement('td');
     tdRating.appendChild(buildStarsEl(d.rating || 0));
 
-    // 口コミ
+    // 口コミ総数（全期間）
+    const tdTotal = document.createElement('td');
+    tdTotal.style.cssText = 'font-variant-numeric:tabular-nums';
+    tdTotal.textContent = fmt(store.reviewCount || 0) + '件';
+
+    // 当月の新着口コミ
     const tdReviews = document.createElement('td');
     tdReviews.textContent = (d.newReviews || 0) + '件';
 
-    // 最終投稿日
-    const tdPost = document.createElement('td');
-    tdPost.style.color = '#64748b';
-    tdPost.textContent = d.lastPost || '—';
-
-    // 投稿回数
-    const tdPosts = document.createElement('td');
-    tdPosts.textContent = (d.posts || 0) + '回';
+    // 予約（Google経由）
+    const tdBookings = document.createElement('td');
+    tdBookings.style.cssText = 'font-variant-numeric:tabular-nums;font-weight:600';
+    tdBookings.textContent = fmt(d.bookings || 0) + '件';
 
     // 未返信
     const tdUnreplied = document.createElement('td');
@@ -9030,7 +9055,7 @@ function renderTable(ids) {
       tdUnreplied.appendChild(z);
     }
 
-    [tdName, tdViews, tdPct, tdRating, tdReviews, tdPost, tdPosts, tdUnreplied].forEach(td => tr.appendChild(td));
+    [tdName, tdViews, tdPct, tdRating, tdTotal, tdReviews, tdBookings, tdUnreplied].forEach(td => tr.appendChild(td));
     tbody.appendChild(tr);
   });
 }
