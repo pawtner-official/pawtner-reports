@@ -22,31 +22,33 @@ iPhone からプロセスを起動することはできません。そこで lau
 
 ## セットアップ
 
-Mac mini のターミナルで一度だけ実行します。
+Mac mini のターミナルで、この 2 行を貼るだけです。
 
 ```bash
-# 1. 信頼ダイアログを通す（未実施の場合のみ）
-cd /Volumes/T7/MASTER && claude    # 「信頼する」を選んで終了
-
-# 2. 常駐設定
-bash tools/claude-rc-setup.sh
+curl -fsSL https://raw.githubusercontent.com/pawtner-official/pawtner-reports/claude/t7-unmount-incident-6rtkb9/tools/claude-rc-setup.sh -o /tmp/claude-rc-setup.sh
+bash /tmp/claude-rc-setup.sh
 ```
 
 作業対象を変える場合:
 
 ```bash
-PROJECT_DIR=/Volumes/T7/別フォルダ SESSION_NAME=MacMini-Sub bash tools/claude-rc-setup.sh
+PROJECT_DIR=/Volumes/T7/別フォルダ SESSION_NAME=MacMini-Sub bash /tmp/claude-rc-setup.sh
 ```
 
-スクリプトが行うこと:
+スクリプトが自動で行うこと:
 
-- `~/bin/claude-rc.sh` を生成（T7 のマウントを最大 5 分待ってから起動）
-- `~/Library/LaunchAgents/com.pawtner.claude-rc.plist` を生成・登録
-- `KeepAlive` によりネットワーク断やプロセス終了から自動復帰
-- 起動確認とログの場所を表示
+- 信頼ダイアログの誘導（未承認なら claude を起動し、終了後に自動で続行）
+- `~/bin/claude-rc.sh` の生成（T7 のマウントを最大 5 分待ってから起動）
+- `~/Library/LaunchAgents/com.pawtner.claude-rc.plist` の生成・登録
+- `KeepAlive` によるネットワーク断・プロセス終了からの自動復帰
+- `pmset` でスリープ無効化・停電復帰後の自動起動・WOL を設定
+- 起動確認とセッション URL の表示
+- フルディスクアクセス設定パネルを開く
 
-スクリプト実行後、案内される手作業が 3 つあります
-（スリープ無効化・フルディスクアクセス・プッシュ通知）。
+自動化できない残作業は 2 つだけです。
+
+1. **フルディスクアクセス** — ターミナル.app を追加（パネルは自動で開きます）
+2. **自動ログイン** — システム設定 → ユーザとグループ → 自動ログイン
 
 ## iPhone からの使い方
 
